@@ -1,0 +1,119 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2506                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Geometry (Lopez-Guajardo reactor):
+//   Inner radius:  0.0254 m   (25.4 mm)
+//   Outer radius:  0.03175 m  (31.75 mm)
+//   Gap:           0.00635 m  (6.35 mm)
+//   Height:        0.1905 m   (190.5 mm)
+//   Aspect ratio:  30
+//   Radius ratio:  0.8
+//   Wedge angle:   5 degrees (half-angle 2.5 deg)
+//
+//   cos(2.5 deg) = 0.9990482
+//   sin(2.5 deg) = 0.0436194
+
+convertToMeters 1;
+
+vertices
+(
+    // Bottom (z = -0.09525), -y wedge face
+    ( 0.02537582 -0.00110793 -0.09525)   // 0  inner, -2.5 deg
+    ( 0.03171978 -0.00138492 -0.09525)   // 1  outer, -2.5 deg
+
+    // Bottom (z = -0.09525), +y wedge face
+    ( 0.03171978  0.00138492 -0.09525)   // 2  outer, +2.5 deg
+    ( 0.02537582  0.00110793 -0.09525)   // 3  inner, +2.5 deg
+
+    // Top (z = 0.09525), -y wedge face
+    ( 0.02537582 -0.00110793  0.09525)   // 4  inner, -2.5 deg
+    ( 0.03171978 -0.00138492  0.09525)   // 5  outer, -2.5 deg
+
+    // Top (z = 0.09525), +y wedge face
+    ( 0.03171978  0.00138492  0.09525)   // 6  outer, +2.5 deg
+    ( 0.02537582  0.00110793  0.09525)   // 7  inner, +2.5 deg
+);
+
+blocks
+(
+    //                              radial  azimuthal  axial
+    hex (0 1 2 3 4 5 6 7)          (20     1          600) simpleGrading (1 1 1)
+);
+
+edges
+(
+    // Bottom arcs (midpoint on the x-axis, y=0)
+    arc 0 3  (0.0254   0  -0.09525)
+    arc 1 2  (0.03175  0  -0.09525)
+
+    // Top arcs
+    arc 4 7  (0.0254   0   0.09525)
+    arc 5 6  (0.03175  0   0.09525)
+);
+
+boundary
+(
+    inner_wall
+    {
+        type wall;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    outer_wall
+    {
+        type wall;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+    top
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    bottom
+    {
+        type patch;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    front
+    {
+        type wedge;
+        faces
+        (
+            (0 1 5 4)
+        );
+    }
+    back
+    {
+        type wedge;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+);
+
+// ************************************************************************* //

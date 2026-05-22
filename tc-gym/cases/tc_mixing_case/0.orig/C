@@ -1,0 +1,60 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2506                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      C;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    "inner_wall"    {type zeroGradient;}
+    "outer_wall"    {type zeroGradient;}
+
+    "top"
+    {
+        // Inner 1/4 of the gap injects fluid B (C=1), outer 3/4 injects fluid A (C=0)
+        // Gap: R_inner=0.038, R_outer=0.04035, 1/4 mark at r=0.0385875
+        type            codedFixedValue;
+        value           uniform 0;
+        name            topInletC;
+        code
+        #{
+            const vectorField& Cf = patch().Cf();
+            scalarField& field = *this;
+            const scalar Rin  = 0.038;
+            const scalar Rout = 0.04035;
+            const scalar Rcut = Rin + 0.25 * (Rout - Rin);  // 1/4 of gap
+
+            forAll(Cf, i)
+            {
+                scalar r = sqrt(sqr(Cf[i].x()) + sqr(Cf[i].y()));
+                field[i] = (r <= Rcut) ? 1.0 : 0.0;
+            }
+        #};
+    }
+
+    "bottom"
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+
+    "front"         {type wedge;}
+    "back"          {type wedge;}
+}
+
+// ************************************************************************* //
