@@ -1,8 +1,0 @@
-# Direct dependencies only — let pip resolve transitives.
-# Lower bounds chosen for SB3 2.3+ compatibility (TD3/DDPG with Gymnasium API).
-gymnasium>=1.0
-numpy>=1.23
-stable-baselines3>=2.3
-torch>=2.0
-matplotlib>=3.5
-tensorboard>=2.10
