@@ -20,9 +20,9 @@
 #SBATCH -e logs/%x_%A_%a.err      # stderr
 #SBATCH -N 1                      # one node per task
 #SBATCH -n 1                      # one (serial) task
-#SBATCH -c 4                      # CPU cores per task (OpenFOAM/numpy threads)
+#SBATCH -c 48                      # CPU cores per task (OpenFOAM/numpy threads)
 #SBATCH --mem=8G                  # case is tiny; pimpleFoam is modest
-#SBATCH -t 24:00:00               # walltime -- TUNE to your step timing & queue cap
+#SBATCH -t 12:0:0               # walltime -- TUNE to your step timing & queue cap
 #SBATCH --array=0-5               # 6 tasks = 2 algos x 3 seeds (see mapping below)
 # #SBATCH -A <your_allocation>    # TODO: uncomment/set if you have multiple allocations
 # #SBATCH -p <partition>          # TODO: set if a non-default partition is required (check: sinfo)
@@ -48,10 +48,10 @@ SAVE_EVERY=500
 # Most OpenFOAM modules auto-source the foam bashrc; if yours does not,
 # uncomment the `source` line.
 # ---------------------------------------------------------------------
-OPENFOAM_MODULE="OpenFOAM/v2312"      # <-- TODO: confirm exact name with `module avail openfoam`
+OPENFOAM_MODULE="OpenFOAM/v2506-foss-2025b"
 module purge
 module load "$OPENFOAM_MODULE"
-# source "$FOAM_ETC/bashrc"           # <-- uncomment if pimpleFoam isn't on PATH after module load
+source "$FOAM_BASH"                    # EasyBuild only stages deps on load; this activates pimpleFoam/wmake
 
 # =====================================================================
 # Python environment (Miniforge conda, the RCDC-documented route).
