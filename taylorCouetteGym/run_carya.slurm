@@ -54,13 +54,16 @@ module load "$OPENFOAM_MODULE"
 # source "$FOAM_ETC/bashrc"           # <-- uncomment if pimpleFoam isn't on PATH after module load
 
 # =====================================================================
-# TODO #2 -- Python environment with torch + gymnasium + this env package.
-# Pick whichever you set up on Carya, e.g.:
-#   source ~/envs/tc/bin/activate                 # venv
-#   module load Anaconda3 && conda activate tc    # conda
-# (one-time setup: pip install -r ../requirements.txt && pip install -e taylor_couette_mixing)
+# Python environment (Miniforge conda, the RCDC-documented route).
+# One-time setup:
+#   module add Miniforge3/py3.10
+#   export CONDA_PKGS_DIRS=/project/mwang/ibascom/conda_cache_dir
+#   conda create -p /project/mwang/ibascom/envs/tc python==3.11
+#   source activate /project/mwang/ibascom/envs/tc
+#   pip install -r ../requirements-carya.txt
 # ---------------------------------------------------------------------
-source ~/envs/tc/bin/activate         # <-- TODO: replace with your env activation
+module add Miniforge3/py3.10
+source activate /project/mwang/ibascom/envs/tc   # <-- adjust path if you named the env differently
 
 # ---- per-task isolated case copy -----------------------------------
 cd "$SLURM_SUBMIT_DIR"

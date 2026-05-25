@@ -1,0 +1,15 @@
+# Minimal runtime deps for TaylorCouetteMixing TD3/DDPG training on Carya.
+#
+# CPU-only torch on purpose: the actor/critic is a tiny 400x300 MLP and the
+# wall-clock bottleneck is serial pimpleFoam, so a GPU build adds queue wait
+# and CUDA-version risk for ~no speedup. (For a GPU build instead, drop the
+# --extra-index-url line and `pip install torch`.)
+#
+# Install:
+#   pip install --upgrade pip setuptools wheel
+#   pip install -r requirements-carya.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+numpy>=2.0
+gymnasium
+matplotlib
