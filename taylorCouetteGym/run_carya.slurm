@@ -49,9 +49,11 @@ SAVE_EVERY=500
 # uncomment the `source` line.
 # ---------------------------------------------------------------------
 OPENFOAM_MODULE="OpenFOAM/v2506-foss-2025b"
+set +u                                # OpenFOAM's bashrc references unset vars (e.g. WM_PROJECT_SITE); set -u would abort
 module purge
 module load "$OPENFOAM_MODULE"
 source "$FOAM_BASH"                    # EasyBuild only stages deps on load; this activates pimpleFoam/wmake
+set -u
 unset PYTHONPATH PYTHONHOME            # OpenFOAM's SciPy-bundle dep leaks EasyBuild py3.13 paths that break conda numpy
 
 # =====================================================================
