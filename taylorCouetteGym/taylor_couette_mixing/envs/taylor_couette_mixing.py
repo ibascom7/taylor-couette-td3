@@ -1,6 +1,5 @@
 import gymnasium as gym
 from gymnasium import spaces
-import pygame
 import numpy as np
 
 from taylor_couette_mixing.envs.helpers import Helpers

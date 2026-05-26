@@ -52,18 +52,21 @@ OPENFOAM_MODULE="OpenFOAM/v2506-foss-2025b"
 module purge
 module load "$OPENFOAM_MODULE"
 source "$FOAM_BASH"                    # EasyBuild only stages deps on load; this activates pimpleFoam/wmake
+unset PYTHONPATH PYTHONHOME            # OpenFOAM's SciPy-bundle dep leaks EasyBuild py3.13 paths that break conda numpy
 
 # =====================================================================
-# Python environment (Miniforge conda, the RCDC-documented route).
-# One-time setup:
+# Python: call the conda env's interpreter by ABSOLUTE PATH -- no activation.
+# `module load OpenFOAM` prepends EasyBuild's Python to PATH, so a bare `python`
+# (or `source activate`, which can also abort the job under `set -e`) is
+# unreliable here. An absolute path is immune: Python loads packages from its
+# own location, not PATH. Env was built once with:
 #   module add Miniforge3/py3.10
 #   export CONDA_PKGS_DIRS=/project/mwang/ibascom/conda_cache_dir
 #   conda create -p /project/mwang/ibascom/envs/tc python==3.11
-#   source activate /project/mwang/ibascom/envs/tc
+#   conda activate /project/mwang/ibascom/envs/tc
 #   pip install -r ../requirements-carya.txt
 # ---------------------------------------------------------------------
-module add Miniforge3/py3.10
-source activate /project/mwang/ibascom/envs/tc   # <-- adjust path if you named the env differently
+PYTHON=/project/mwang/ibascom/envs/tc/bin/python   # <-- adjust if you named the env differently
 
 # ---- per-task isolated case copy -----------------------------------
 cd "$SLURM_SUBMIT_DIR"
@@ -85,7 +88,7 @@ echo "    host: $(hostname)  cores: ${SLURM_CPUS_PER_TASK:-?}"
 # ---- run -----------------------------------------------------------
 # Results land in results/<algo>/seed<seed>/ next to train.py (persistent),
 # regardless of where the scratch case lives.
-python train.py \
+"$PYTHON" train.py \
     --algo "$ALGO" \
     --seed "$SEED" \
     --case_path "$RUN_CASE" \
