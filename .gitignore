@@ -1,0 +1,17 @@
+# OpenFOAM per-task scratch case copies (huge, regenerated every run)
+_runs/
+taylorCouetteGym/_runs/
+
+# SLURM logs
+logs/
+taylorCouetteGym/logs/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Editor swap files
+*.swp
+
+# NOTE: results/ is intentionally NOT ignored -- the .npy logs + checkpoints
+# are what you push to GitHub and pull down to plot locally.
