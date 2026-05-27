@@ -24,6 +24,8 @@
 #SBATCH --mem=16G                 # prev run pinned MaxRSS at the old 8G cap; headroom to avoid OOM
 #SBATCH -t 40:0:0               # walltime -- TUNE to your step timing & queue cap
 #SBATCH --array=0-5               # 6 tasks = 2 algos x 3 seeds (see mapping below)
+#SBATCH --mail-type=ALL,ARRAY_TASKS   # email on BEGIN/END/FAIL/TIME_LIMIT; ARRAY_TASKS = one mail PER array task
+#SBATCH --mail-user=bascomisaiah@gmail.com   # <-- if no mail arrives, try your uh.edu address (HPC often only relays internal)
 # #SBATCH -A <your_allocation>    # TODO: uncomment/set if you have multiple allocations
 # #SBATCH -p <partition>          # TODO: set if a non-default partition is required (check: sinfo)
 

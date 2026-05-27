@@ -58,6 +58,13 @@ functions
         schemesField    C;
         D               1e-09;
         nCorr           1;
+        // Solve the transport eqn every timestep (correct physics) but only
+        // WRITE C when the solver writes (writeInterval 1). Without this the
+        // FO defaults to writing C every timestep -> ~1000 time dirs per RL
+        // step, which is what timed the run out at 24h (not writeInterval).
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
     }
     rlMetrics
     {
