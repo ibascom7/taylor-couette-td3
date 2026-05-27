@@ -21,8 +21,8 @@
 #SBATCH -N 1                      # one node per task
 #SBATCH -n 1                      # one (serial) task
 #SBATCH -c 48                      # CPU cores per task (OpenFOAM/numpy threads)
-#SBATCH --mem=8G                  # case is tiny; pimpleFoam is modest
-#SBATCH -t 24:0:0               # walltime -- TUNE to your step timing & queue cap
+#SBATCH --mem=16G                 # prev run pinned MaxRSS at the old 8G cap; headroom to avoid OOM
+#SBATCH -t 40:0:0               # walltime -- TUNE to your step timing & queue cap
 #SBATCH --array=0-5               # 6 tasks = 2 algos x 3 seeds (see mapping below)
 # #SBATCH -A <your_allocation>    # TODO: uncomment/set if you have multiple allocations
 # #SBATCH -p <partition>          # TODO: set if a non-default partition is required (check: sinfo)

@@ -27,7 +27,11 @@ deltaT          0.001;
 
 writeControl    runTime;
 
-writeInterval   0.001;
+// One field write per RL step (= env time_step of 1s). Lands exactly on each
+// integer-second boundary that _set_omega/_update_end_time depend on. deltaT
+// (CFD stability) and per-timestep METRICS (stdout) are unaffected -- this only
+// drops the 999 unused intra-step field dumps that were the I/O bottleneck.
+writeInterval   1;
 
 purgeWrite      0;
 
