@@ -148,6 +148,10 @@ if __name__ == "__main__":
     parser.add_argument("--discount", type=float, default=0.99)
     parser.add_argument("--tau", type=float, default=0.005)
     parser.add_argument("--save_every", type=int, default=500)
+    parser.add_argument("--tag", default=None,
+                        help="Results subdir name under results/<algo>/. Defaults to "
+                             "seed<seed>. Use a distinct tag per sweep config so concurrent "
+                             "runs at the same seed don't overwrite each other's outputs.")
     args = parser.parse_args()
 
     algo = args.algo
@@ -161,10 +165,11 @@ if __name__ == "__main__":
     tau = args.tau
     save_every = args.save_every
 
-    run_dir = os.path.join(RESULTS_ROOT, algo, f"seed{seed}")
+    run_subdir = args.tag if args.tag else f"seed{seed}"
+    run_dir = os.path.join(RESULTS_ROOT, algo, run_subdir)
     os.makedirs(run_dir, exist_ok=True)
     ckpt_prefix = os.path.join(run_dir, f"{algo}_tc")
-    print(f"[{algo}] seed={seed} case={args.case_path} -> {run_dir}")
+    print(f"[{algo}] seed={seed} tag={args.tag} case={args.case_path} -> {run_dir}")
 
     env = TaylorCouetteMixingEnv(case_path=args.case_path, max_steps=max_steps_per_ep)
 
