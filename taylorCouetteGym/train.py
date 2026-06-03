@@ -65,9 +65,27 @@ class ReplayBuffer(object):
         )
 
 
-def obs_to_state(obs):
-    """Dict obs -> flat np.array. Env returns omega as a scalar; wrap to (1,)."""
-    return np.array([float(obs["omega"])], dtype=np.float32)
+def make_obs_to_state(omega_max, energy_norm):
+    """Build a Dict-obs -> flat normalized state adapter.
+
+    The three observed quantities live on very different scales (raw omega
+    ~±300 vs cumulative energy ~1e-2 J), so without rescaling the energy and
+    mixing signals are swamped in the network. Each is mapped to ~[-1, 1]:
+      omega              -> omega / omega_max        in [-1, 1]
+      mixing_index       -> 2*I - 1   (I in [0, 1])  in [-1, 1]
+      energy_consumption -> E / energy_norm          in ~[0, 1]
+    """
+    def obs_to_state(obs):
+        return np.array(
+            [
+                float(obs["omega"]) / omega_max,
+                2.0 * float(obs["mixing_index"]) - 1.0,
+                float(obs["energy_consumption"]) / energy_norm,
+            ],
+            dtype=np.float32,
+        )
+
+    return obs_to_state
 
 
 def make_policy(algo, state_dim, action_dim, max_action, discount, tau):
@@ -153,7 +171,12 @@ if __name__ == "__main__":
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    state_dim = 1   # just omega
+    # Normalize obs to ~[-1, 1]; cumulative energy is bounded by E_max_per_step * max_steps.
+    obs_to_state = make_obs_to_state(
+        omega_max=env.omega_max,
+        energy_norm=env.E_max_per_step * max_steps_per_ep,
+    )
+    state_dim = 3   # omega, mixing_index, energy_consumption
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])  # 1.0
 

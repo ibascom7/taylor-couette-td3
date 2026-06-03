@@ -39,15 +39,23 @@ class TaylorCouetteMixingEnv(gym.Env):
         self.beta = 1.0 # How much we care about energy consumption
         self.I_current = 1.0 # Initially unmixed
         self.I_threshold = 0.01
-        self.E_current = 0.0 # 0 initial energy consumption
+        self.E_current = 0.0 # 0 initial energy consumption (cumulative joules)
+        # Energy of a reference step: 52.4 rad/s for 1 s. Used to normalize E.
+        self.E_max_per_step = 0.0011017031875434
         self.time_step = 1 # Number of seconds that the sim runs between steps
         self.step_count = 0
 
         self.omega_min  = omega_min
         self.omega_max = omega_max
+        # E_current is cumulative over an episode, so its upper bound scales
+        # with max_steps; mixing_index is already in [0, 1].
         self.observation_space = spaces.Dict(
             {
-                "omega": spaces.Box(low=omega_min, high=omega_max, shape=(1,), dtype=np.float64)
+                "omega": spaces.Box(low=omega_min, high=omega_max, shape=(1,), dtype=np.float64),
+                "mixing_index": spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float64),
+                "energy_consumption": spaces.Box(
+                    low=0.0, high=self.E_max_per_step * max_steps, shape=(1,), dtype=np.float64
+                ),
             }
         )
 
@@ -69,7 +77,11 @@ class TaylorCouetteMixingEnv(gym.Env):
         # self.clock = None
 
     def _get_obs(self):
-        return {"omega": self.omega}
+        return {
+            "omega": self.omega,
+            "mixing_index": self.I_current,
+            "energy_consumption": self.E_current
+        }
 
     def _get_info(self):
         return {
@@ -130,7 +142,7 @@ class TaylorCouetteMixingEnv(gym.Env):
              powers.append(Mz * omega_rad)
              times.append(result["t"])
         E = -np.trapezoid(powers, times) # Energy consumption of this time step
-        E_norm = E / 0.0011017031875434 # This is from a run with 52.4 rad/sec for 1 second AKA E_max in joules.
+        E_norm = E / self.E_max_per_step # Normalized per-step energy (ref: 52.4 rad/s for 1 s)
 
         # OpenFOAM simulates a r by h wedge of the annulus
         # There are 20 equally spaced bins between r_in and r_out at the bottom with concentrations at each.
@@ -142,11 +154,14 @@ class TaylorCouetteMixingEnv(gym.Env):
         terminated = False
         truncated = (self.step_count >= self.max_steps)
         reward = -(self.alpha * mixing_index) - (self.beta * E_norm)
-        observation = self._get_obs()
 
+        # Update state BEFORE building the observation so obs reflects the
+        # values just computed this step (otherwise obs lags by one step).
         self.E_current = self.E_current + E
         self.I_current = mixing_index
         self.step_count += 1
+
+        observation = self._get_obs()
         info = self._get_info()
         return observation, reward, terminated, truncated, info
 
