@@ -23,6 +23,9 @@ import torch
 import DDPG
 import TD3
 from taylor_couette_mixing.envs.taylor_couette_mixing import TaylorCouetteMixingEnv
+from taylor_couette_mixing.envs.taylor_couette_constant_omega import (
+    TaylorCouetteConstantOmegaEnv,
+)
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -137,10 +140,24 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", choices=["td3", "ddpg"], default="td3")
+    parser.add_argument("--env", choices=["stepwise", "constant"], default="stepwise",
+                        help="stepwise: pick delta_omega each second (original). "
+                             "constant: pick ONE absolute omega per episode and run "
+                             "it for --episode_duration seconds (a 1-D optimizer).")
+    parser.add_argument("--episode_duration", type=float, default=60.0,
+                        help="[constant env] seconds the chosen omega runs before "
+                             "mixing/energy are scored.")
+    parser.add_argument("--capture_episodes", default="",
+                        help="[constant env] comma-separated 1-based episode "
+                             "indices whose OpenFOAM time dirs are saved under "
+                             "<run_dir>/frames/ for ParaView (e.g. '1,5,final'; "
+                             "'final' = --max_timesteps). Empty = capture none.")
     parser.add_argument("--case_path", default=DEFAULT_CASE_PATH,
                         help="OpenFOAM case dir (use a distinct copy per concurrent run)")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--max_steps_per_ep", type=int, default=60)
+    parser.add_argument("--max_steps_per_ep", type=int, default=60,
+                        help="stepwise: simulated seconds per episode. "
+                             "constant: independent omega trials per gym episode.")
     parser.add_argument("--max_timesteps", type=int, default=3_000)
     parser.add_argument("--start_timesteps", type=int, default=120)
     parser.add_argument("--expl_noise", type=float, default=0.1)
@@ -152,7 +169,30 @@ if __name__ == "__main__":
                         help="Results subdir name under results/<algo>/. Defaults to "
                              "seed<seed>. Use a distinct tag per sweep config so concurrent "
                              "runs at the same seed don't overwrite each other's outputs.")
+    parser.add_argument("--smoke", action="store_true",
+                        help="Tiny end-to-end sanity run: a few short episodes with "
+                             "frequent saves (and, for --env constant, short duration + "
+                             "frame capture) to validate the whole pipeline in minutes "
+                             "before committing a full run. Overrides the budget flags.")
     args = parser.parse_args()
+
+    if args.smoke:
+        # Shrink everything to the smallest run that still exercises the env
+        # step loop, policy.train(), a periodic save, the final save, and (for
+        # the constant env) frame snapshotting.
+        args.max_timesteps = 3
+        args.start_timesteps = 1   # < max_timesteps so policy.train() also runs
+        args.save_every = 1        # so a periodic save fires too
+        if args.env == "constant":
+            args.episode_duration = 5.0          # short sim, still real pimpleFoam
+            if not args.capture_episodes:
+                args.capture_episodes = "1,final"  # exercise the snapshot path
+        else:
+            args.max_steps_per_ep = 3
+        print(f"[smoke] env={args.env} max_timesteps={args.max_timesteps} "
+              f"start_timesteps={args.start_timesteps} "
+              f"episode_duration={args.episode_duration} "
+              f"capture={args.capture_episodes!r}")
 
     algo = args.algo
     seed = args.seed
@@ -169,17 +209,39 @@ if __name__ == "__main__":
     run_dir = os.path.join(RESULTS_ROOT, algo, run_subdir)
     os.makedirs(run_dir, exist_ok=True)
     ckpt_prefix = os.path.join(run_dir, f"{algo}_tc")
-    print(f"[{algo}] seed={seed} tag={args.tag} case={args.case_path} -> {run_dir}")
+    print(f"[{algo}/{args.env}] seed={seed} tag={args.tag} case={args.case_path} -> {run_dir}")
 
-    env = TaylorCouetteMixingEnv(case_path=args.case_path, max_steps=max_steps_per_ep)
+    if args.env == "constant":
+        # "final" resolves to the last episode (max_timesteps episodes, since
+        # each step is one episode here).
+        capture_episodes = [
+            max_timesteps if tok.strip() == "final" else int(tok)
+            for tok in args.capture_episodes.split(",")
+            if tok.strip()
+        ]
+        capture_dir = os.path.join(run_dir, "frames") if capture_episodes else None
+        if capture_dir:
+            os.makedirs(capture_dir, exist_ok=True)
+        env = TaylorCouetteConstantOmegaEnv(
+            case_path=args.case_path,
+            episode_duration=args.episode_duration,
+            capture_episodes=capture_episodes,
+            capture_dir=capture_dir,
+        )
+        # Energy is now the total over one constant-omega run.
+        energy_norm = env.E_max_per_step * args.episode_duration
+    else:
+        env = TaylorCouetteMixingEnv(case_path=args.case_path, max_steps=max_steps_per_ep)
+        # Cumulative energy is bounded by E_max_per_step * max_steps.
+        energy_norm = env.E_max_per_step * max_steps_per_ep
 
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    # Normalize obs to ~[-1, 1]; cumulative energy is bounded by E_max_per_step * max_steps.
+    # Normalize obs to ~[-1, 1].
     obs_to_state = make_obs_to_state(
         omega_max=env.omega_max,
-        energy_norm=env.E_max_per_step * max_steps_per_ep,
+        energy_norm=energy_norm,
     )
     state_dim = 3   # omega, mixing_index, energy_consumption
     action_dim = env.action_space.shape[0]

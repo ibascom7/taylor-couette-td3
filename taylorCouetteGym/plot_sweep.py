@@ -64,11 +64,19 @@ def load_mean_per_step(tag, metric):
 
 
 def smooth(y, window):
-    """Centered rolling mean; window<=1 or short series returns y unchanged."""
+    """Centered rolling mean; window<=1 or short series returns y unchanged.
+
+    Near the ends the window shrinks to only the samples that exist, instead of
+    padding with zeros -- a plain np.convolve(mode="same") divides edge points by
+    the full window while implicitly treating off-array samples as 0, which drags
+    the first/last points toward 0 and shows up as a spike at the end of a curve.
+    """
     if window <= 1 or len(y) < window:
         return y
-    kernel = np.ones(window) / window
-    return np.convolve(y, kernel, mode="same")
+    kernel = np.ones(window)
+    total = np.convolve(y, kernel, mode="same")
+    count = np.convolve(np.ones_like(y), kernel, mode="same")
+    return total / count
 
 
 def main():

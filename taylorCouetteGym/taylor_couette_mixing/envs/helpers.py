@@ -162,6 +162,35 @@ class Helpers():
         shutil.copytree(case / latest_name, warmed)
         return True
 
+    def snapshot_frames(self, dest):
+        """Copy the case's mesh + all numeric time dirs into dest for offline
+        ParaView viewing, and drop an empty .foam file so it opens directly.
+
+        Captures everything the OpenFOAM ParaView reader needs (constant/ mesh,
+        system/controlDict, and every written time directory including 0/) so a
+        single episode's trajectory can be animated. dest is overwritten if it
+        already exists. ~9 MB for a 60 s run at writeInterval 1.
+        """
+        case = Path(self.case_path)
+        dest = Path(dest)
+        if dest.exists():
+            shutil.rmtree(dest)
+        dest.mkdir(parents=True)
+
+        shutil.copytree(case / "constant", dest / "constant")
+        shutil.copytree(case / "system", dest / "system")
+        for p in case.iterdir():
+            if not p.is_dir():
+                continue
+            try:
+                float(p.name)  # numeric time directory (a frame)
+            except ValueError:
+                continue
+            shutil.copytree(p, dest / p.name)
+
+        (dest / f"{dest.name}.foam").touch()
+        return True
+
     def do_simulation(self, chosen_omega, time_step):
         """Runs pimpleFoam for (time_step) seconds with chosen angular velocity.
         
