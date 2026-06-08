@@ -15,3 +15,10 @@ __pycache__/
 
 # NOTE: results/ is intentionally NOT ignored -- the .npy logs + checkpoints
 # are what you push to GitHub and pull down to plot locally.
+
+# ...EXCEPT the raw OpenFOAM frame trees captured for ParaView: each is many
+# small files (hundreds per sweep). Keep the trees out of git and commit the
+# frames.tgz tarball beside them instead (see pack_frames.sh). The tarball is
+# NOT under frames/, so it is not matched by these rules.
+results/**/frames/
+taylorCouetteGym/results/**/frames/
