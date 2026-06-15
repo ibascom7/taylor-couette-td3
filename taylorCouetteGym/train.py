@@ -154,6 +154,23 @@ if __name__ == "__main__":
                              "'final' = --max_timesteps). Empty = capture none.")
     parser.add_argument("--case_path", default=DEFAULT_CASE_PATH,
                         help="OpenFOAM case dir (use a distinct copy per concurrent run)")
+    parser.add_argument("--r_in", type=float, default=25.4,
+                        help="Inner cylinder radius (mm) of the case geometry. "
+                             "Wedge tc_mixing_case: 25.4. Full 3D full_tc_mixing_case: 38.0.")
+    parser.add_argument("--r_out", type=float, default=31.75,
+                        help="Outer cylinder radius (mm) of the case geometry. "
+                             "Wedge tc_mixing_case: 31.75. Full 3D full_tc_mixing_case: 40.35.")
+    parser.add_argument("--e_max_per_step", type=float, default=0.0011017031875434,
+                        help="Per-step energy normalizer (J) for the reward's energy term. "
+                             "Geometry-specific (full annulus burns far more than the wedge); "
+                             "calibrate per case. Wedge default shown.")
+    parser.add_argument("--warmup_duration", type=float, default=10.0,
+                        help="Seconds to spin the case up (once, cached as 0.warmed) before "
+                             "training, so dye has reached the bottom outlet. Must exceed the "
+                             "advective residence time H/U_inlet (~13.7 s for the full 3D case, "
+                             "so use ~18-20 there; the wedge default 10 s suffices for the wedge).")
+    parser.add_argument("--warmup_omega_rpm", type=float, default=100.0,
+                        help="Angular velocity (rpm) used during the warmup spin-up.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max_steps_per_ep", type=int, default=60,
                         help="stepwise: simulated seconds per episode. "
@@ -227,11 +244,40 @@ if __name__ == "__main__":
             episode_duration=args.episode_duration,
             capture_episodes=capture_episodes,
             capture_dir=capture_dir,
+            r_in=args.r_in,
+            r_out=args.r_out,
+            E_max_per_step=args.e_max_per_step,
+            warmup_duration=args.warmup_duration,
+            warmup_omega_rpm=args.warmup_omega_rpm,
         )
         # Energy is now the total over one constant-omega run.
         energy_norm = env.E_max_per_step * args.episode_duration
     else:
-        env = TaylorCouetteMixingEnv(case_path=args.case_path, max_steps=max_steps_per_ep)
+        # Frame capture: 'final' = the last episode that fully completes (and so
+        # truncates -> gets snapshotted) within the step budget. An episode ends
+        # the step AFTER step_count reaches max_steps, i.e. it spans
+        # (max_steps_per_ep + 1) env steps, so divide by that. Indices 1-based.
+        steps_per_episode = max_steps_per_ep + 1
+        final_ep = max(1, max_timesteps // steps_per_episode)
+        capture_episodes = [
+            final_ep if tok.strip() == "final" else int(tok)
+            for tok in args.capture_episodes.split(",")
+            if tok.strip()
+        ]
+        capture_dir = os.path.join(run_dir, "frames") if capture_episodes else None
+        if capture_dir:
+            os.makedirs(capture_dir, exist_ok=True)
+        env = TaylorCouetteMixingEnv(
+            case_path=args.case_path,
+            max_steps=max_steps_per_ep,
+            r_in=args.r_in,
+            r_out=args.r_out,
+            E_max_per_step=args.e_max_per_step,
+            warmup_duration=args.warmup_duration,
+            warmup_omega_rpm=args.warmup_omega_rpm,
+            capture_episodes=capture_episodes,
+            capture_dir=capture_dir,
+        )
         # Cumulative energy is bounded by E_max_per_step * max_steps.
         energy_norm = env.E_max_per_step * max_steps_per_ep
 

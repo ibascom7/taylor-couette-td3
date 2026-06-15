@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// Passive dye tracer C in [0, 1] (mirrors tc_mixing_case/0/C). Dye is fed at
+// the top inlet over the inner quarter of the gap; the rotating inner cylinder
+// must mix it radially before it leaves the bottom outlet, where the RL coded
+// functionObject samples 20 radial bins to form the mixing index.
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    object          C;
+}
+
+dimensions      [ 0 0 0 0 0 0 0 ];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inner_wall
+    {
+        type            zeroGradient;
+    }
+    outer_wall
+    {
+        type            zeroGradient;
+    }
+    top
+    {
+        // Inject dye (C=1) over the inner quarter of the gap, C=0 elsewhere.
+        // Radii match this geometry: Rin=0.038 m, Rout=0.04035 m.
+        type            codedFixedValue;
+        value           uniform 0;
+        name            topInletC;
+        code            #{
+            const vectorField& Cf = patch().Cf();
+            scalarField& field = *this;
+            const scalar Rin  = 0.038;
+            const scalar Rout = 0.04035;
+            const scalar Rcut = Rin + 0.25 * (Rout - Rin);  // 1/4 of gap
+
+            forAll(Cf, i)
+            {
+                scalar r = sqrt(sqr(Cf[i].x()) + sqr(Cf[i].y()));
+                field[i] = (r <= Rcut) ? 1.0 : 0.0;
+            }
+        #};
+    }
+    bottom
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+}
+
+// ************************************************************************* //

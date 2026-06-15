@@ -1,3 +1,5 @@
+import os
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -22,7 +24,20 @@ class TaylorCouetteMixingEnv(gym.Env):
         max_steps=60,
         warmup_omega_rpm=100.0,
         warmup_duration=10.0,
+        r_in=25.4,
+        r_out=31.75,
+        E_max_per_step=0.0011017031875434,
+        capture_episodes=(),
+        capture_dir=None,
     ):
+        # Geometry of the annulus being driven (mm). Defaults match the wedge
+        # tc_mixing_case; override for a different case (e.g. the full 3D
+        # full_tc_mixing_case uses r_in=38.0, r_out=40.35). These must agree
+        # with Rin/Rout in that case's rlMetrics functionObject so the radial
+        # bins line up with the mixing-index weighting.
+        self.r_in = r_in
+        self.r_out = r_out
+
         self.helpers = Helpers(case_path)
 
         # Spin the case up once so dye reaches the measurement bins.
@@ -40,10 +55,21 @@ class TaylorCouetteMixingEnv(gym.Env):
         self.I_current = 1.0 # Initially unmixed
         self.I_threshold = 0.01
         self.E_current = 0.0 # 0 initial energy consumption (cumulative joules)
-        # Energy of a reference step: 52.4 rad/s for 1 s. Used to normalize E.
-        self.E_max_per_step = 0.0011017031875434
+        # Per-step energy normalizer (J). Geometry-specific: torque scales with
+        # cylinder area, so the full 360 annulus burns far more than the wedge.
+        # Default is the wedge's reference (52.4 rad/s for 1 s); pass the value
+        # calibrated for the case being run.
+        self.E_max_per_step = E_max_per_step
         self.time_step = 1 # Number of seconds that the sim runs between steps
         self.step_count = 0
+
+        # Optional ParaView frame capture: snapshot the OpenFOAM time dirs of
+        # the listed (1-based) episodes into capture_dir/ep<NNNN>/ at the end of
+        # each, BEFORE the next hard reset wipes them. episode_count is the
+        # 1-based index of the episode currently running (bumped in reset()).
+        self.capture_episodes = {int(e) for e in capture_episodes}
+        self.capture_dir = capture_dir
+        self.episode_count = 0
 
         self.omega_min  = omega_min
         self.omega_max = omega_max
@@ -95,8 +121,8 @@ class TaylorCouetteMixingEnv(gym.Env):
         """Calculating Intensity of Segregation.
         I_mix = (Variance in Concentration) / (Maximum Variance in Concentration)
         Over 20 radial bins we find the variance in concentration """
-        r_in = 25.4 # radius of inner cylinder (mm)
-        r_out = 31.75 # radious of outer cylinder (mm)
+        r_in = self.r_in # radius of inner cylinder (mm)
+        r_out = self.r_out # radious of outer cylinder (mm)
         nBins = 20
 
         C = np.asarray(concentrations, dtype=float)
@@ -119,6 +145,8 @@ class TaylorCouetteMixingEnv(gym.Env):
         mode = (options or {}).get("reset_mode", "hard")
         self.helpers.reset_case(mode=mode)
 
+        # 1-based index of the episode this reset is starting.
+        self.episode_count += 1
         self.step_count = 0
         self.omega = self.omega_start
         self.E_current = 0.0
@@ -160,6 +188,14 @@ class TaylorCouetteMixingEnv(gym.Env):
         self.E_current = self.E_current + E
         self.I_current = mixing_index
         self.step_count += 1
+
+        # On the step that ends a captured episode, snapshot its whole
+        # trajectory (all time dirs 0..max_steps) before train.py's next
+        # hard reset wipes them. capture_episodes is 1-based to match the
+        # episode indices a user names (1, 20, final).
+        if self.capture_dir and truncated and self.episode_count in self.capture_episodes:
+            dest = os.path.join(self.capture_dir, f"ep{self.episode_count:04d}")
+            self.helpers.snapshot_frames(dest)
 
         observation = self._get_obs()
         info = self._get_info()

@@ -1,0 +1,158 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// Full 360-degree Taylor-Couette annulus, structured (4-quadrant O-grid).
+//
+// Geometry matches the Andras Horvath reference case exactly:
+//   inner radius Rin  = 0.038    m
+//   outer radius Rout = 0.04035  m   (gap = 2.35 mm, eta = Rin/Rout = 0.942)
+//   axial extent z in [-0.0100095, 0.0100095] m  (height = 20.019 mm)
+//
+// Unlike the original snappyHexMesh cut-cell mesh (~258k cells) this is a clean
+// hex mesh whose resolution is set by (nr, nq, nz) below -- deliberately COARSE
+// so a transient pimpleFoam RL step is tractable. Bump these to refine.
+//
+// Patches inner_wall / outer_wall / top / bottom match the names the RL coded
+// functionObject (system/controlDict) and the gym env look for. top is the dye
+// inlet, bottom the outlet (flow-through mixer, mirroring tc_mixing_case).
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    object          blockMeshDict;
+}
+
+convertToMeters 1;
+
+// ---------------------------------------------------------------- geometry
+ri      0.038;       // inner radius
+ro      0.04035;     // outer radius
+zMin   -0.0100095;
+zMax    0.0100095;
+
+// ---------------------------------------------------------------- resolution
+nr      8;           // radial cells across the 2.35 mm gap
+nq      18;          // azimuthal cells per quadrant  -> 72 cells around (5 deg)
+nz      16;          // axial cells
+
+// ---------------------------------------------------------------- derived
+rin     #eval{ -1 * $ri };
+ron     #eval{ -1 * $ro };
+rid     #eval{ $ri / sqrt(2.0) };   // 45-deg diagonal, inner
+rod     #eval{ $ro / sqrt(2.0) };   // 45-deg diagonal, outer
+ridn    #eval{ -1 * $rid };
+rodn    #eval{ -1 * $rod };
+
+vertices
+(
+    ( $ri   0      $zMin )   //  0  inner   0 deg
+    ( 0      $ri   $zMin )   //  1  inner  90 deg
+    ( $rin  0      $zMin )   //  2  inner 180 deg
+    ( 0      $rin  $zMin )   //  3  inner 270 deg
+    ( $ro   0      $zMin )   //  4  outer   0 deg
+    ( 0      $ro   $zMin )   //  5  outer  90 deg
+    ( $ron  0      $zMin )   //  6  outer 180 deg
+    ( 0      $ron  $zMin )   //  7  outer 270 deg
+    ( $ri   0      $zMax )   //  8  inner   0 deg (top)
+    ( 0      $ri   $zMax )   //  9  inner  90 deg
+    ( $rin  0      $zMax )   // 10  inner 180 deg
+    ( 0      $rin  $zMax )   // 11  inner 270 deg
+    ( $ro   0      $zMax )   // 12  outer   0 deg (top)
+    ( 0      $ro   $zMax )   // 13  outer  90 deg
+    ( $ron  0      $zMax )   // 14  outer 180 deg
+    ( 0      $ron  $zMax )   // 15  outer 270 deg
+);
+
+// Each block spans one 90-deg quadrant. Local axes: x=radial (nr),
+// y=azimuthal (nq), z=axial (nz).
+blocks
+(
+    hex ( 0 4 5 1   8 12 13  9 ) ( $nr $nq $nz ) simpleGrading (1 1 1)   // Q1   0- 90
+    hex ( 1 5 6 2   9 13 14 10 ) ( $nr $nq $nz ) simpleGrading (1 1 1)   // Q2  90-180
+    hex ( 2 6 7 3  10 14 15 11 ) ( $nr $nq $nz ) simpleGrading (1 1 1)   // Q3 180-270
+    hex ( 3 7 4 0  11 15 12  8 ) ( $nr $nq $nz ) simpleGrading (1 1 1)   // Q4 270-360
+);
+
+// Arc midpoints make the radial faces follow true circles.
+edges
+(
+    // inner circle, bottom
+    arc  0  1 ( $rid  $rid  $zMin )
+    arc  1  2 ( $ridn $rid  $zMin )
+    arc  2  3 ( $ridn $ridn $zMin )
+    arc  3  0 ( $rid  $ridn $zMin )
+    // outer circle, bottom
+    arc  4  5 ( $rod  $rod  $zMin )
+    arc  5  6 ( $rodn $rod  $zMin )
+    arc  6  7 ( $rodn $rodn $zMin )
+    arc  7  4 ( $rod  $rodn $zMin )
+    // inner circle, top
+    arc  8  9 ( $rid  $rid  $zMax )
+    arc  9 10 ( $ridn $rid  $zMax )
+    arc 10 11 ( $ridn $ridn $zMax )
+    arc 11  8 ( $rid  $ridn $zMax )
+    // outer circle, top
+    arc 12 13 ( $rod  $rod  $zMax )
+    arc 13 14 ( $rodn $rod  $zMax )
+    arc 14 15 ( $rodn $rodn $zMax )
+    arc 15 12 ( $rod  $rodn $zMax )
+);
+
+boundary
+(
+    inner_wall
+    {
+        type wall;
+        faces
+        (
+            ( 0  1  9  8 )
+            ( 1  2 10  9 )
+            ( 2  3 11 10 )
+            ( 3  0  8 11 )
+        );
+    }
+    outer_wall
+    {
+        type wall;
+        faces
+        (
+            ( 4  5 13 12 )
+            ( 5  6 14 13 )
+            ( 6  7 15 14 )
+            ( 7  4 12 15 )
+        );
+    }
+    top
+    {
+        type patch;
+        faces
+        (
+            (  8 12 13  9 )
+            (  9 13 14 10 )
+            ( 10 14 15 11 )
+            ( 11 15 12  8 )
+        );
+    }
+    bottom
+    {
+        type patch;
+        faces
+        (
+            ( 0 4 5 1 )
+            ( 1 5 6 2 )
+            ( 2 6 7 3 )
+            ( 3 7 4 0 )
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //
