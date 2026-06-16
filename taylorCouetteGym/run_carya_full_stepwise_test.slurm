@@ -80,7 +80,7 @@ PYTHON=/project/mwang/ibascom/envs/tc/bin/python   # <-- match run_carya.slurm
 # ---- per-task isolated case copy -----------------------------------
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
-MASTER_CASE="taylor_couette_mixing/cases/full_tc_mixing_case"
+MASTER_CASE="taylor_couette_mixing/cases/full_tc_horvath_case"  # Andras Horvath geom (9216 cells); full_tc_mixing_case is now PAPER geom
 RUN_ROOT="${SLURM_TMPDIR:-$SLURM_SUBMIT_DIR/_runs}/${ALGO}_${TAG}"
 RUN_CASE="$RUN_ROOT/full_tc_mixing_case"
 rm -rf "$RUN_ROOT"; mkdir -p "$RUN_ROOT"

@@ -1,42 +1,48 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2506                                 |
-|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
+// Passive dye tracer C in [0, 1] (mirrors tc_mixing_case/0/C). Dye is fed at
+// the top inlet over the inner quarter of the gap; the rotating inner cylinder
+// must mix it radially before it leaves the bottom outlet, where the RL coded
+// functionObject samples 20 radial bins to form the mixing index.
 FoamFile
 {
-    version     2.0;
-    format      ascii;
-    class       volScalarField;
-    object      C;
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    object          C;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 0 0 0 0 0 0];
+dimensions      [ 0 0 0 0 0 0 0 ];
 
 internalField   uniform 0;
 
 boundaryField
 {
-    "inner_wall"    {type zeroGradient;}
-    "outer_wall"    {type zeroGradient;}
-
-    "top"
+    inner_wall
     {
-        // Inner 1/4 of the gap injects fluid B (C=1), outer 3/4 injects fluid A (C=0)
-        // Gap (Lopez-Guajardo geom): R_inner=0.0254, R_outer=0.03175,
-        // 1/4 mark at r=0.0254 + 0.25*(0.03175-0.0254) = 0.0269875
+        type            zeroGradient;
+    }
+    outer_wall
+    {
+        type            zeroGradient;
+    }
+    top
+    {
+        // Inject dye (C=1) over the inner quarter of the gap, C=0 elsewhere.
+        // Radii match this geometry: Rin=0.038 m, Rout=0.04035 m.
         type            codedFixedValue;
         value           uniform 0;
         name            topInletC;
-        code
-        #{
+        code            #{
             const vectorField& Cf = patch().Cf();
             scalarField& field = *this;
-            const scalar Rin  = 0.0254;
-            const scalar Rout = 0.03175;
+            const scalar Rin  = 0.038;
+            const scalar Rout = 0.04035;
             const scalar Rcut = Rin + 0.25 * (Rout - Rin);  // 1/4 of gap
 
             forAll(Cf, i)
@@ -46,16 +52,12 @@ boundaryField
             }
         #};
     }
-
-    "bottom"
+    bottom
     {
         type            inletOutlet;
         inletValue      uniform 0;
         value           uniform 0;
     }
-
-    "front"         {type wedge;}
-    "back"          {type wedge;}
 }
 
 // ************************************************************************* //

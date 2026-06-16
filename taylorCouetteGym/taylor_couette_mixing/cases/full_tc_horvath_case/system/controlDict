@@ -86,8 +86,8 @@ functions
 
             // ---------- 20 radial bins at the bottom outlet ----------
             const label bottomID = mesh.boundaryMesh().findPatchID("bottom");
-            const scalar Rin  = 0.0254;
-            const scalar Rout = 0.03175;
+            const scalar Rin  = 0.038;
+            const scalar Rout = 0.04035;
             const label  nBins = 20;
             scalarField  binC(nBins, 0.0);
             scalarField  binVz(nBins, 0.0);

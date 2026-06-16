@@ -5,45 +5,45 @@
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 FoamFile
 {
-    version     2.0;
-    format      ascii;
-    arch        "LSB;label=32;scalar=64";
-    class       polyBoundaryMesh;
-    location    "constant/polyMesh";
-    object      boundary;
+    version         2;
+    format          ascii;
+    class           volVectorField;
+    object          U;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-4
-(
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 0 0 0 );
+
+boundaryField
+{
     inner_wall
     {
-        type            wall;
-        inGroups        1(wall);
-        nFaces          10944;
-        startFace       251136;
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           0;
+        value           uniform ( 0 0 0 );
     }
     outer_wall
     {
-        type            wall;
-        inGroups        1(wall);
-        nFaces          10944;
-        startFace       262080;
+        type            noSlip;
     }
     top
     {
-        type            patch;
-        nFaces          576;
-        startFace       273024;
+        type            fixedValue;
+        value           uniform ( 0 0 -0.001462 );
     }
     bottom
     {
-        type            patch;
-        nFaces          576;
-        startFace       273600;
+        type            inletOutlet;
+        inletValue      uniform ( 0 0 0 );
+        value           uniform ( 0 0 0 );
     }
-)
+}
+
 
 // ************************************************************************* //

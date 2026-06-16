@@ -5,45 +5,38 @@
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
+// Kinematic pressure (p/rho). Pressure reference fixed at the bottom outlet.
 FoamFile
 {
-    version     2.0;
-    format      ascii;
-    arch        "LSB;label=32;scalar=64";
-    class       polyBoundaryMesh;
-    location    "constant/polyMesh";
-    object      boundary;
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    object          p;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-4
-(
+dimensions      [ 0 2 -2 0 0 0 0 ];
+
+internalField   uniform 0;
+
+boundaryField
+{
     inner_wall
     {
-        type            wall;
-        inGroups        1(wall);
-        nFaces          10944;
-        startFace       251136;
+        type            zeroGradient;
     }
     outer_wall
     {
-        type            wall;
-        inGroups        1(wall);
-        nFaces          10944;
-        startFace       262080;
+        type            zeroGradient;
     }
     top
     {
-        type            patch;
-        nFaces          576;
-        startFace       273024;
+        type            zeroGradient;
     }
     bottom
     {
-        type            patch;
-        nFaces          576;
-        startFace       273600;
+        type            fixedValue;
+        value           uniform 0;
     }
-)
+}
 
 // ************************************************************************* //

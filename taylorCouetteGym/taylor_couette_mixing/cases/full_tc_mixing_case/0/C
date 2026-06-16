@@ -34,15 +34,15 @@ boundaryField
     top
     {
         // Inject dye (C=1) over the inner quarter of the gap, C=0 elsewhere.
-        // Radii match this geometry: Rin=0.038 m, Rout=0.04035 m.
+        // Radii match this geometry (Lopez-Guajardo): Rin=0.0254 m, Rout=0.03175 m.
         type            codedFixedValue;
         value           uniform 0;
         name            topInletC;
         code            #{
             const vectorField& Cf = patch().Cf();
             scalarField& field = *this;
-            const scalar Rin  = 0.038;
-            const scalar Rout = 0.04035;
+            const scalar Rin  = 0.0254;
+            const scalar Rout = 0.03175;
             const scalar Rcut = Rin + 0.25 * (Rout - Rin);  // 1/4 of gap
 
             forAll(Cf, i)

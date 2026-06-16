@@ -22,27 +22,27 @@ FoamFile
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          10944;
-        startFace       251136;
+        nFaces          1152;
+        startFace       25920;
     }
     outer_wall
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          10944;
-        startFace       262080;
+        nFaces          1152;
+        startFace       27072;
     }
     top
     {
         type            patch;
         nFaces          576;
-        startFace       273024;
+        startFace       28224;
     }
     bottom
     {
         type            patch;
         nFaces          576;
-        startFace       273600;
+        startFace       28800;
     }
 )
 

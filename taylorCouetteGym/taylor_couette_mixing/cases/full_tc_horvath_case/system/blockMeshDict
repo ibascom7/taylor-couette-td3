@@ -7,18 +7,14 @@
 \*---------------------------------------------------------------------------*/
 // Full 360-degree Taylor-Couette annulus, structured (4-quadrant O-grid).
 //
-// Geometry matches the Lopez-Guajardo et al. (Chem. Eng. J. 489 (2024) 151174)
-// catalytic-wall Taylor-Couette reactor (see TCR_geometry_conditions.md):
-//   inner radius Rin  = 0.0254   m   (d_i = 50.8 mm)
-//   outer radius Rout = 0.03175  m   (d_o = 63.5 mm; gap d = 6.35 mm)
-//   diameter ratio    lambda = Rin/Rout = 0.8
-//   axial extent z in [-0.09525, 0.09525] m  (height H = 190.5 mm)
-//   aspect ratio      Gamma = H/d = 30
+// Geometry matches the Andras Horvath reference case exactly:
+//   inner radius Rin  = 0.038    m
+//   outer radius Rout = 0.04035  m   (gap = 2.35 mm, eta = Rin/Rout = 0.942)
+//   axial extent z in [-0.0100095, 0.0100095] m  (height = 20.019 mm)
 //
-// This is a clean hex mesh whose resolution is set by (nr, nq, nz) below --
-// deliberately COARSE so a transient pimpleFoam RL step is tractable. nz is
-// scaled to the tall (Gamma=30) domain so axial cells stay ~1.25 mm. Bump
-// (nr, nq, nz) to refine.
+// Unlike the original snappyHexMesh cut-cell mesh (~258k cells) this is a clean
+// hex mesh whose resolution is set by (nr, nq, nz) below -- deliberately COARSE
+// so a transient pimpleFoam RL step is tractable. Bump these to refine.
 //
 // Patches inner_wall / outer_wall / top / bottom match the names the RL coded
 // functionObject (system/controlDict) and the gym env look for. top is the dye
@@ -34,15 +30,15 @@ FoamFile
 convertToMeters 1;
 
 // ---------------------------------------------------------------- geometry
-ri      0.0254;      // inner radius (d_i = 50.8 mm)
-ro      0.03175;     // outer radius (d_o = 63.5 mm; gap d = 6.35 mm)
-zMin   -0.09525;     // -H/2
-zMax    0.09525;     // +H/2  (H = 190.5 mm)
+ri      0.038;       // inner radius
+ro      0.04035;     // outer radius
+zMin   -0.0100095;
+zMax    0.0100095;
 
 // ---------------------------------------------------------------- resolution
-nr      8;           // radial cells across the 6.35 mm gap  (~0.79 mm/cell)
+nr      8;           // radial cells across the 2.35 mm gap
 nq      18;          // azimuthal cells per quadrant  -> 72 cells around (5 deg)
-nz      152;         // axial cells over H=190.5 mm  (~1.25 mm/cell, Gamma=30)
+nz      16;          // axial cells
 
 // ---------------------------------------------------------------- derived
 rin     #eval{ -1 * $ri };
