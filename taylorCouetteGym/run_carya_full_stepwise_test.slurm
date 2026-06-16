@@ -87,6 +87,7 @@ rm -rf "$RUN_ROOT"; mkdir -p "$RUN_ROOT"
 cp -r "$MASTER_CASE" "$RUN_CASE"
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
+export PYTHONUNBUFFERED=1   # flush train.py prints live so progress/dt show up in the .out log
 
 echo "=== full-3D stepwise TEST: algo=$ALGO seed=$SEED tag=$TAG ==="
 echo "    case copy: $RUN_CASE  (Rin=$R_IN Rout=$R_OUT mm)"
