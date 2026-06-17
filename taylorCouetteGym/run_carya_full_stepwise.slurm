@@ -26,10 +26,11 @@
 #SBATCH -e logs/%x_%A_%a.err
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -c 48
+#SBATCH -c 4                      # pimpleFoam runs SERIALLY here; 48 cores just
+                                  # made this unschedulable. 4 covers torch/numpy.
 #SBATCH --mem=16G
-#SBATCH -t 48:0:0                 # generous; ~30 s/step on the coarse full mesh
-#SBATCH --array=0-2               # 3 seeds (see mapping below)
+#SBATCH -t 24:0:0                 # ~30 s/step on the coarse full mesh (9216 cells)
+#SBATCH --array=0-2               # 3 seeds; submit with --array=0 for a fast single-seed start
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
 # #SBATCH -A <your_allocation>

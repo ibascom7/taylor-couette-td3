@@ -33,7 +33,7 @@ cd taylorCouetteGym
 sbatch experiments/oscillation_vs_constant/run_carya_oscillation_vs_constant.slurm
 # 3D paper geometry (slow):
 sbatch experiments/oscillation_vs_constant/run_carya_oscillation_vs_constant_3d.slurm
-# each is a 2-task array: task 0 = constant, task 1 = squarewave, run concurrently
+# each is a 2-task array: task 0 = constant, task 1 = squarewave, run concurrently..
 squeue -u $USER
 ```
 
