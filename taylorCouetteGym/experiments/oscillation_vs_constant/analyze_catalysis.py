@@ -84,7 +84,7 @@ def main():
         w = (t >= w0) & (t <= w1)
         om = omega_rad(name, t, args.mean_rpm, args.duty, args.period)
         power = RHO * mz * om                        # instantaneous input power (~)
-        energy = np.trapz(np.abs(power[w]), t[w])    # input energy over the window
+        energy = np.trapezoid(np.abs(power[w]), t[w])  # input energy over the window (np 2.0)
         mconv = conv[w].mean()
         eff = mconv / energy if energy > 0 else float("nan")
         summary.append(dict(name=name, mconv=mconv, energy=energy, eff=eff))
