@@ -102,6 +102,10 @@ def main():
     ap.add_argument("--prof-window", type=float, nargs=2, default=None,
                     help="TMIN TMAX to average the radial profile over "
                          "(default: last full period present in both runs)")
+    ap.add_argument("--tmax", type=float, default=None,
+                    help="clip ALL runs to t<=TMAX so the curves end together "
+                         "(default: the shorter run's end time; use 'full' via a "
+                         "big number to keep each run's own length)")
     args = ap.parse_args()
 
     runs = {}
@@ -113,7 +117,17 @@ def main():
     if not runs:
         raise SystemExit(f"no usable *.log in {args.results_dir}")
     order = [n for n in ("constant", "squarewave") if n in runs] or list(runs)
+
+    # Runs that timed out reach different end times (e.g. squarewave is costlier
+    # so it covers less sim-time in the same walltime). Clip all to a common
+    # end so the figures are symmetric and the comparison is over equal spans.
+    clip = args.tmax if args.tmax else min(runs[n][0].max() for n in order)
+    for n in list(runs):
+        t, mz, C, Vz = runs[n]
+        m = t <= clip
+        runs[n] = (t[m], mz[m], C[m], Vz[m])
     tmax_all = min(runs[n][0].max() for n in order)
+    print(f"clipping all runs to t <= {clip:.1f} s (common end)")
 
     # default profile window = last full period both runs reached
     if args.prof_window:

@@ -163,7 +163,7 @@ functions
         field           C;
         resetOnStartUp  false;
         schemesField    C;
-        D               1e-09;
+        D               __D__;
         nCorr           1;
         executeControl  timeStep;
         executeInterval 1;
@@ -278,7 +278,171 @@ functions
 """
 
 
-def write_controlDict(case, run_seconds, max_co, max_dt, sample_interval):
+# Catalysis variant: same torque + outlet radial bins, PLUS the two quantities
+# the paper actually reports -- cup-mixing conversion at the outlet and the
+# diffusive flux consumed at the catalytic (outer) wall.
+FUNCTIONS_BLOCK_CATALYSIS = r"""
+functions
+{
+    scalarTransport
+    {
+        type            scalarTransport;
+        libs            ( solverFunctionObjects );
+        field           C;
+        resetOnStartUp  false;
+        schemesField    C;
+        D               __D__;
+        nCorr           1;
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+    }
+    catalysis
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            catalysis;
+        executeControl  timeStep;
+        executeInterval __SAMPLE__;
+        codeOptions     #{
+            -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
+            -I$(LIB_SRC)/TurbulenceModels/incompressible/lnInclude \
+            -I$(LIB_SRC)/transportModels \
+            -I$(LIB_SRC)/transportModels/incompressible/lnInclude
+        #};
+        codeLibs        #{
+            -lincompressibleTurbulenceModels \
+            -lturbulenceModels \
+            -lincompressibleTransportModels
+        #};
+        codeInclude     #{
+            #include "turbulentTransportModel.H"
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = dynamic_cast<const fvMesh&>(this->mesh());
+            const Time&   runTime = mesh.time();
+
+            const volScalarField& C = mesh.lookupObject<volScalarField>("C");
+            const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+
+            const scalar Dmol = __D__;          // species diffusivity (matches scalarTransport)
+            const scalar Rin  = 0.0254;
+            const scalar Rout = 0.03175;
+            const label  nBins = 20;
+            scalarField  binC(nBins, 0.0);
+            scalarField  binVz(nBins, 0.0);
+            scalarField  binW(nBins, 0.0);
+
+            // ---------- bottom outlet: radial bins + cup-mixing conversion ----------
+            const label bottomID = mesh.boundaryMesh().findPatchID("bottom");
+            scalar cupNum = 0.0, cupDen = 0.0;   // flux-weighted (cup-mixing) average C
+            if (bottomID >= 0)
+            {
+                const scalarField& Cb = C.boundaryField()[bottomID];
+                const vectorField& Ub = U.boundaryField()[bottomID];
+                const vectorField& Cf = mesh.Cf().boundaryField()[bottomID];
+                const scalarField  magSf(mag(mesh.Sf().boundaryField()[bottomID]));
+                forAll(Cb, i)
+                {
+                    scalar r = sqrt(sqr(Cf[i].x()) + sqr(Cf[i].y()));
+                    label  b = label((r - Rin) / (Rout - Rin) * nBins);
+                    if (b < 0) b = 0;
+                    if (b >= nBins) b = nBins - 1;
+                    binC[b]  += Cb[i] * magSf[i];
+                    binVz[b] += Ub[i].z() * magSf[i];
+                    binW[b]  += magSf[i];
+                    scalar f = mag(Ub[i].z()) * magSf[i];   // |axial volumetric flux|
+                    cupNum += Cb[i] * f;
+                    cupDen += f;
+                }
+            }
+            reduce(binC,  sumOp<scalarField>());
+            reduce(binVz, sumOp<scalarField>());
+            reduce(binW,  sumOp<scalarField>());
+            reduce(cupNum, sumOp<scalar>());
+            reduce(cupDen, sumOp<scalar>());
+            forAll(binC, b)
+                if (binW[b] > SMALL) { binC[b] /= binW[b]; binVz[b] /= binW[b]; }
+            scalar cupC = (cupDen > SMALL) ? cupNum / cupDen : 0.0;
+            scalar conv = 1.0 - cupC;            // c0 = 1, so conversion = 1 - cup outlet C
+
+            // ---------- catalytic (outer) wall: diffusive consumption flux ----------
+            const label outerID = mesh.boundaryMesh().findPatchID("outer_wall");
+            scalar wallFlux = 0.0;               // mol/s (per unit c0): -D * dC/dn integrated
+            if (outerID >= 0)
+            {
+                const scalarField snGradC(C.boundaryField()[outerID].snGrad());
+                const scalarField magSf(mag(mesh.Sf().boundaryField()[outerID]));
+                forAll(snGradC, i) wallFlux += -Dmol * snGradC[i] * magSf[i];
+            }
+            reduce(wallFlux, sumOp<scalar>());
+
+            // ---------- inner-cylinder torque (for power/energy) ----------
+            const label innerID = mesh.boundaryMesh().findPatchID("inner_wall");
+            const incompressible::turbulenceModel& turb =
+                mesh.lookupObject<incompressible::turbulenceModel>("turbulenceProperties");
+            tmp<volSymmTensorField> tdevReff = turb.devReff();
+            const volSymmTensorField& devReff = tdevReff();
+            vector M(vector::zero);
+            if (innerID >= 0)
+            {
+                const vectorField& Sf  = mesh.Sf().boundaryField()[innerID];
+                const vectorField& Cf  = mesh.Cf().boundaryField()[innerID];
+                const symmTensorField& tauB = devReff.boundaryField()[innerID];
+                forAll(Sf, i) M += (Cf[i] ^ (tauB[i] & Sf[i]));
+            }
+            reduce(M, sumOp<vector>());
+
+            Info<< "METRICS t=" << runTime.value()
+                << " Mz_kin=" << M.z()
+                << " conv=" << conv
+                << " cupC=" << cupC
+                << " wallFlux=" << wallFlux;
+            forAll(binC, b)  Info<< " C"  << b << "=" << binC[b];
+            forAll(binVz, b) Info<< " Vz" << b << "=" << binVz[b];
+            Info<< endl;
+        #};
+    }
+}
+"""
+
+
+def write_C_catalysis(case, geometry):
+    # Reactant fed at c0=1, consumed at the catalytic outer wall (C=0 sink).
+    # Inner (rotating) wall is inert (zeroGradient). Conversion = 1 - cup outlet C.
+    wedge = ('    "front"         { type wedge; }\n'
+             '    "back"          { type wedge; }\n') if geometry == "wedge" else ""
+    with open(os.path.join(case, "0", "C"), "w") as f:
+        f.write(f"""\
+FoamFile
+{{
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    object          C;
+}}
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 1;                 // reactor initially full of feed (c0=1)
+
+boundaryField
+{{
+    "inner_wall"    {{ type zeroGradient; }}             // inert rotating wall
+    "outer_wall"    {{ type fixedValue; value uniform 0; }}   // CATALYTIC wall: fast reaction sink
+    "top"           {{ type fixedValue; value uniform 1; }}   // reactant feed c0=1
+    "bottom"
+    {{
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 1;
+    }}
+{wedge}}}
+""")
+
+
+def write_controlDict(case, run_seconds, max_co, max_dt, sample_interval,
+                      funcs_block=FUNCTIONS_BLOCK, scalar_d="1e-09"):
     header = f"""\
 FoamFile
 {{
@@ -315,7 +479,8 @@ timeFormat      general;
 timePrecision   9;
 runTimeModifiable no;
 """
-    funcs = FUNCTIONS_BLOCK.replace("__SAMPLE__", f"{sample_interval}")
+    funcs = (funcs_block.replace("__SAMPLE__", f"{sample_interval}")
+                        .replace("__D__", f"{scalar_d}"))
     with open(os.path.join(case, "system", "controlDict"), "w") as f:
         f.write(header + funcs)
 
@@ -337,6 +502,12 @@ def main():
     ap.add_argument("--sample-interval", type=int, default=20,
                     help="emit a METRICS line every N timesteps (analyze.py uses "
                          "the logged t= values, so irregular dt spacing is fine)")
+    ap.add_argument("--catalysis", action="store_true",
+                    help="catalytic-wall mode: feed reactant c0=1, outer wall = C=0 "
+                         "sink, log conversion + wall flux (the paper's actual metric)")
+    ap.add_argument("--scalar-D", default="1e-8",
+                    help="species diffusivity [m^2/s] in catalysis mode (paper's is "
+                         "~1e-10 / Sc~1e5; 1e-8 keeps the wall boundary layer resolvable)")
     args = ap.parse_args()
 
     case = os.path.abspath(args.case)
@@ -362,11 +533,21 @@ def main():
             mean_rad, args.duty, args.period, args.run_seconds, args.ramp)
 
     write_U(case, omega_entry, args.geometry)
-    write_controlDict(case, args.run_seconds, args.max_co, args.max_dt,
-                      args.sample_interval)
+    if args.catalysis:
+        write_C_catalysis(case, args.geometry)
+        write_controlDict(case, args.run_seconds, args.max_co, args.max_dt,
+                          args.sample_interval,
+                          funcs_block=FUNCTIONS_BLOCK_CATALYSIS,
+                          scalar_d=args.scalar_D)
+    else:
+        write_controlDict(case, args.run_seconds, args.max_co, args.max_dt,
+                          args.sample_interval)
 
-    print(f"[make_case] {args.mode}: mean={args.mean_rpm:.0f} rpm "
+    print(f"[make_case] {args.mode}{' CATALYSIS' if args.catalysis else ''}: "
+          f"mean={args.mean_rpm:.0f} rpm "
           f"({mean_rad:.4f} rad/s), run={args.run_seconds:.0f}s -> {case}")
+    if args.catalysis:
+        print(f"[make_case]   feed c0=1, outer wall=C0 sink, D={args.scalar_D} m^2/s")
     if args.mode == "squarewave":
         w_high, _ = squarewave_points(mean_rad, args.duty, args.period,
                                       args.run_seconds, args.ramp)
