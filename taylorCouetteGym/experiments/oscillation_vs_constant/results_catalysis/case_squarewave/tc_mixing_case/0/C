@@ -1,0 +1,26 @@
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    object          C;
+}
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 1;                 // reactor initially full of feed (c0=1)
+
+boundaryField
+{
+    "inner_wall"    { type zeroGradient; }             // inert rotating wall
+    "outer_wall"    { type fixedValue; value uniform 0; }   // CATALYTIC wall: fast reaction sink
+    "top"           { type fixedValue; value uniform 1; }   // reactant feed c0=1
+    "bottom"
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 1;
+    }
+    "front"         { type wedge; }
+    "back"          { type wedge; }
+}

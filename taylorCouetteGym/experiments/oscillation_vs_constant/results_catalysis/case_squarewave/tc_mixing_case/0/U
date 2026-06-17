@@ -1,0 +1,58 @@
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volVectorField;
+    object          U;
+}
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 0 0 0 );
+
+boundaryField
+{
+    "inner_wall"
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        // square wave: idle 0 rpm / active 2500 rpm, D=0.2, T=30.0s, mean 500 rpm
+        omega           table
+        (
+            (0.00000 261.79939)
+            (5.97500 261.79939)
+            (6.02500 0.00000)
+            (29.97500 0.00000)
+            (30.02500 261.79939)
+            (35.97500 261.79939)
+            (36.02500 0.00000)
+            (59.97500 0.00000)
+            (60.02500 261.79939)
+            (65.97500 261.79939)
+            (66.02500 0.00000)
+            (89.97500 0.00000)
+            (90.02500 261.79939)
+        );
+    }
+    "outer_wall"
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           0;
+    }
+    "top"
+    {
+        type            fixedValue;
+        value           uniform ( 0 0 -0.001462 );   // u_ax = Q0/A (100 mL/min)
+    }
+    "bottom"
+    {
+        type            inletOutlet;
+        inletValue      uniform ( 0 0 0 );
+        value           uniform ( 0 0 0 );
+    }
+    "front"         { type wedge; }
+    "back"          { type wedge; }
+}

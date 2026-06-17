@@ -1,0 +1,1 @@
+LIB = $(PWD)/../platforms/$(WM_OPTIONS)/lib/libcatalysis_ec602091c42c16faf62a6584cdc5fc9ae4ccf17b
