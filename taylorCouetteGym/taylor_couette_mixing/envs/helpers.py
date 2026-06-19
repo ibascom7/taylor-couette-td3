@@ -43,6 +43,40 @@ class Helpers():
         )
         return True
 
+    def _set_omega_ramp(self, omega_from, omega_to, ramp_time, time_step):
+        """Set inner-wall omega as a LINEAR RAMP from omega_from to omega_to over
+        the first `ramp_time` seconds of this step, then hold omega_to.
+
+        Avoids a large instantaneous change in wall velocity (which spikes the
+        Courant number on the first timestep after an RL action and can crash the
+        solver at high omega). Implemented as a tabulated Function1 omega on the
+        rotatingWallVelocity BC -- the same form make_case.py writes for the
+        prescribed square wave, so it is known to parse in this OpenFOAM version.
+
+        Times are ABSOLUTE simulation time: the table spans [t0, t_end] (t0 = the
+        latest time dir we restart from), so the BC is never evaluated outside the
+        table and out-of-bounds handling is irrelevant. The final point sits past
+        t_end so the hold value is unambiguous.
+        """
+        latest_time = self._get_latest_time()
+        t0 = float(latest_time)
+        t_end = t0 + time_step
+        pts = [
+            (t0, omega_from),
+            (t0 + ramp_time, omega_to),
+            (t_end + 1.0, omega_to),
+        ]
+        table = "table (" + " ".join(f"({t:.6f} {w:.6f})" for t, w in pts) + ")"
+        subprocess.run(
+            ["foamDictionary",
+             "-entry", "boundaryField.inner_wall.omega",
+             "-set", table,
+             f"{latest_time}/U"],
+             cwd=self.case_path, check=True,
+             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        return True
+
     def _parse_metrics(self, line):
         """Parses RL_metrics log line from system/conrolDict"""
         parts = dict(p.split("=") for p in line.split()[1:])
@@ -191,13 +225,24 @@ class Helpers():
         (dest / f"{dest.name}.foam").touch()
         return True
 
-    def do_simulation(self, chosen_omega, time_step):
+    def do_simulation(self, chosen_omega, time_step, ramp_from=None, ramp_time=0.0):
         """Runs pimpleFoam for (time_step) seconds with chosen angular velocity.
-        
+
+        If ramp_from is not None and ramp_time > 0, the inner-wall omega is
+        LINEARLY RAMPED from ramp_from to chosen_omega over the first ramp_time
+        seconds of the step (then held), instead of jumping instantly -- this
+        keeps the wall acceleration finite so a big RL action does not spike the
+        Courant number on the first timestep (see _set_omega_ramp). Otherwise the
+        omega is set instantly as a scalar (the original behavior, used by the
+        mixing/constant envs and the warmup).
+
         Returns a list of the metrics for each time interval of the step
         {time, Mz_kin, concentrations}
         """
-        self._set_omega(chosen_omega)
+        if ramp_from is not None and ramp_time > 0:
+            self._set_omega_ramp(ramp_from, chosen_omega, ramp_time, time_step)
+        else:
+            self._set_omega(chosen_omega)
         self._update_end_time(time_step)
         result = subprocess.run(
             ["pimpleFoam"],

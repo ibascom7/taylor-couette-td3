@@ -26,6 +26,9 @@ from taylor_couette_mixing.envs.taylor_couette_mixing import TaylorCouetteMixing
 from taylor_couette_mixing.envs.taylor_couette_constant_omega import (
     TaylorCouetteConstantOmegaEnv,
 )
+from taylor_couette_mixing.envs.taylor_couette_catalysis import (
+    TaylorCouetteCatalysisEnv,
+)
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -140,10 +143,13 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", choices=["td3", "ddpg"], default="td3")
-    parser.add_argument("--env", choices=["stepwise", "constant"], default="stepwise",
+    parser.add_argument("--env", choices=["stepwise", "constant", "catalysis"],
+                        default="stepwise",
                         help="stepwise: pick delta_omega each second (original). "
                              "constant: pick ONE absolute omega per episode and run "
-                             "it for --episode_duration seconds (a 1-D optimizer).")
+                             "it for --episode_duration seconds (a 1-D optimizer). "
+                             "catalysis: pick an ABSOLUTE omega each second on the "
+                             "catalytic-wall case; reward = conversion - energy.")
     parser.add_argument("--episode_duration", type=float, default=60.0,
                         help="[constant env] seconds the chosen omega runs before "
                              "mixing/energy are scored.")
@@ -171,6 +177,29 @@ if __name__ == "__main__":
                              "so use ~18-20 there; the wedge default 10 s suffices for the wedge).")
     parser.add_argument("--warmup_omega_rpm", type=float, default=100.0,
                         help="Angular velocity (rpm) used during the warmup spin-up.")
+    parser.add_argument("--conv_weight", type=float, default=1.0,
+                        help="[catalysis env] weight on conversion in the reward "
+                             "(maximized). reward = conv_weight*conv - energy_weight*E_norm.")
+    parser.add_argument("--energy_weight", type=float, default=0.1,
+                        help="[catalysis env] weight on per-step input energy in the "
+                             "reward (penalized). THE knob: too high -> agent idles "
+                             "omega->0; too low -> omega pins to omega_max. The paper's "
+                             "'more conversion at less energy' lives in between.")
+    parser.add_argument("--energy_model", choices=["motor", "mechanical"], default="motor",
+                        help="[catalysis env] reward energy term. motor: the paper's "
+                             "electric-motor model (Eqs. 18-23) -- bearing-dominated and "
+                             "regenerative, so modulation can be cheap and the agent can "
+                             "discover it. mechanical: viscous-drag work from the CFD "
+                             "(convex, punishes bursts).")
+    parser.add_argument("--ramp_time", type=float, default=0.05,
+                        help="[catalysis env] seconds to ramp the wall from the "
+                             "previous omega to the new one each step (finite "
+                             "acceleration -> bounded Courant; mirrors make_case.py's "
+                             "square-wave ramps). 0 = instantaneous jump.")
+    parser.add_argument("--results_dir", default=None,
+                        help="Override the results root (default: <gym>/results). Runs "
+                             "land in <results_dir>/<algo>/<tag>/. Use to keep an "
+                             "experiment's outputs in its own folder.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max_steps_per_ep", type=int, default=60,
                         help="stepwise: simulated seconds per episode. "
@@ -222,8 +251,9 @@ if __name__ == "__main__":
     tau = args.tau
     save_every = args.save_every
 
+    results_root = args.results_dir if args.results_dir else RESULTS_ROOT
     run_subdir = args.tag if args.tag else f"seed{seed}"
-    run_dir = os.path.join(RESULTS_ROOT, algo, run_subdir)
+    run_dir = os.path.join(results_root, algo, run_subdir)
     os.makedirs(run_dir, exist_ok=True)
     ckpt_prefix = os.path.join(run_dir, f"{algo}_tc")
     print(f"[{algo}/{args.env}] seed={seed} tag={args.tag} case={args.case_path} -> {run_dir}")
@@ -267,17 +297,38 @@ if __name__ == "__main__":
         capture_dir = os.path.join(run_dir, "frames") if capture_episodes else None
         if capture_dir:
             os.makedirs(capture_dir, exist_ok=True)
-        env = TaylorCouetteMixingEnv(
-            case_path=args.case_path,
-            max_steps=max_steps_per_ep,
-            r_in=args.r_in,
-            r_out=args.r_out,
-            E_max_per_step=args.e_max_per_step,
-            warmup_duration=args.warmup_duration,
-            warmup_omega_rpm=args.warmup_omega_rpm,
-            capture_episodes=capture_episodes,
-            capture_dir=capture_dir,
-        )
+        if args.env == "catalysis":
+            # Stepwise control on the catalytic-wall case: the agent picks an
+            # absolute omega each second; reward = conversion - energy. Conversion
+            # is carried in the obs/info "mixing_index" slot (see env docstring),
+            # so obs_to_state and all logging below work unchanged.
+            env = TaylorCouetteCatalysisEnv(
+                case_path=args.case_path,
+                max_steps=max_steps_per_ep,
+                r_in=args.r_in,
+                r_out=args.r_out,
+                E_max_per_step=args.e_max_per_step,
+                warmup_duration=args.warmup_duration,
+                warmup_omega_rpm=args.warmup_omega_rpm,
+                conv_weight=args.conv_weight,
+                energy_weight=args.energy_weight,
+                energy_model=args.energy_model,
+                ramp_time=args.ramp_time,
+                capture_episodes=capture_episodes,
+                capture_dir=capture_dir,
+            )
+        else:
+            env = TaylorCouetteMixingEnv(
+                case_path=args.case_path,
+                max_steps=max_steps_per_ep,
+                r_in=args.r_in,
+                r_out=args.r_out,
+                E_max_per_step=args.e_max_per_step,
+                warmup_duration=args.warmup_duration,
+                warmup_omega_rpm=args.warmup_omega_rpm,
+                capture_episodes=capture_episodes,
+                capture_dir=capture_dir,
+            )
         # Cumulative energy is bounded by E_max_per_step * max_steps.
         energy_norm = env.E_max_per_step * max_steps_per_ep
 
