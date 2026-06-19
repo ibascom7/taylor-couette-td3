@@ -9,7 +9,7 @@ flavours that share `make_case.py` and `analyze.py`:
 
 | job | case | cells | notes |
 |---|---|---|---|
-| `run_carya_oscillation_vs_constant.slurm`    | `tc_mixing_case` (2D wedge)      | 12 000 | faithful to the paper's own 2D-axisymmetric model; ~1–1.5 h |
+| `run_carya_oscillation_paraview.slurm`       | `tc_mixing_case` (2D wedge)      | 12 000 | faithful to the paper's own 2D-axisymmetric model; writes `results/<mode>.log` **and** keeps the ParaView fields |
 | `run_carya_oscillation_vs_constant_3d.slurm` | `full_tc_mixing_case` (3D, paper geom) | 87 552 | resolves azimuthal structure the wedge can't; ~10 h |
 
 Both use the paper geometry (r_i=25.4, r_o=31.75, H=190.5 mm, Γ=30). The wedge
@@ -30,7 +30,7 @@ bottom outlet** (`rlMetrics` → `METRICS` log lines, 20 radial bins).
 ```bash
 cd taylorCouetteGym
 # 2D wedge (fast):
-sbatch experiments/oscillation_vs_constant/run_carya_oscillation_vs_constant.slurm
+sbatch experiments/oscillation_vs_constant/run_carya_oscillation_paraview.slurm
 # 3D paper geometry (slow):
 sbatch experiments/oscillation_vs_constant/run_carya_oscillation_vs_constant_3d.slurm
 # each is a 2-task array: task 0 = constant, task 1 = squarewave, run concurrently..
@@ -90,5 +90,6 @@ the slurm has the commands and the safe pre-compile recipe in a comment.
 ## Files
 - `make_case.py` — configures a case copy: writes ω(t) on `inner_wall`, seeds a
   clean cold start from `0.orig`, writes the experiment `controlDict`.
-- `run_carya_oscillation_vs_constant.slurm` — the 2-task array driver.
+- `run_carya_oscillation_paraview.slurm` — the 2-task array driver (writes
+  `results/<mode>.log` for the figures and keeps the field dirs for ParaView).
 - `analyze.py` — parses the `METRICS` logs, scores mixing, plots.
