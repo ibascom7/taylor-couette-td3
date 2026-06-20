@@ -329,8 +329,10 @@ if __name__ == "__main__":
                 capture_episodes=capture_episodes,
                 capture_dir=capture_dir,
             )
-        # Cumulative energy is bounded by E_max_per_step * max_steps.
-        energy_norm = env.E_max_per_step * max_steps_per_ep
+        # Normalize the cumulative-energy obs to ~O(1). The catalysis env exposes
+        # energy_obs_norm matching its energy model (motor vs mechanical); the
+        # mixing env has no such attr, so fall back to E_max_per_step.
+        energy_norm = getattr(env, "energy_obs_norm", env.E_max_per_step) * max_steps_per_ep
 
     torch.manual_seed(seed)
     np.random.seed(seed)

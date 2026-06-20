@@ -56,10 +56,22 @@ EXP_DIR="experiments/catalysis_rl"
 mkdir -p "$EXP_DIR/logs"
 MAKE_CASE="experiments/oscillation_vs_constant/make_case.py"
 
-POLICY="$EXP_DIR/results/td3/catalysis_s${SEED}/td3_tc_final"
+POLICY_DIR="$EXP_DIR/results/td3/catalysis_s${SEED}"
+POLICY="$POLICY_DIR/td3_tc_final"
 if [ ! -f "${POLICY}_actor" ]; then
-    echo "ERROR: no trained policy at ${POLICY}_actor -- train first." >&2
-    exit 1
+    # Training reaches td3_tc_final only after ALL --max_timesteps steps. If the
+    # 24h wall cut it short, fall back to the newest periodic checkpoint
+    # (td3_tc_t<N>, written every --save_every steps) so a near-miss is still
+    # comparable instead of erroring out.
+    LATEST=$(ls -1 "$POLICY_DIR"/td3_tc_t*_actor 2>/dev/null \
+             | sed -E 's#.*/td3_tc_t([0-9]+)_actor#\1 &#' | sort -n | tail -1 | cut -d' ' -f2-)
+    if [ -n "${LATEST:-}" ]; then
+        POLICY="${LATEST%_actor}"
+        echo "WARNING: no td3_tc_final; using newest checkpoint $(basename "$POLICY")" >&2
+    else
+        echo "ERROR: no policy (td3_tc_final or td3_tc_t*) in $POLICY_DIR -- train first." >&2
+        exit 1
+    fi
 fi
 
 # Fresh catalysis case copy for the evaluation (independent of the training copy).
@@ -73,7 +85,7 @@ cp -r "$MASTER_CASE" "$RUN_CASE"
     --case "$RUN_CASE" --geometry wedge --mode constant --catalysis \
     --mean-rpm "$MEAN_RPM" --run-seconds "$EVAL_SECONDS" --scalar-D "$SCALAR_D" \
     --max-co 1.5
-# Rebuild the mesh from blockMeshDict (axial 300, not the shipped 600 polyMesh).
+# Rebuild the mesh from blockMeshDict (axial 150, not the shipped 600 polyMesh).
 ( cd "$RUN_CASE" && blockMesh )
 rm -rf "$RUN_CASE/0.warmed" "$RUN_CASE/0.orig"
 

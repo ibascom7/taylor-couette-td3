@@ -104,6 +104,14 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
             tau = np.linspace(0.0, self.time_step, 200)
             w_const = np.full_like(tau, (warmup_omega_rpm * 2 * np.pi) / 60)
             self.motor_e_norm = abs(motor_power.energy(tau, w_const)) or 1.0
+        # Per-step scale for normalizing the cumulative-energy OBSERVATION to ~O(1)
+        # (train.py divides E_current by energy_obs_norm * max_steps). It MUST match
+        # the active energy model: a motor Joule (~6 J/step) is ~10^4x the mechanical
+        # E_max_per_step (~1e-3), so normalizing motor energy by the mechanical scale
+        # feeds TD3 an energy state ~1e4 while omega/conversion are ~[-1,1] -> wrecked
+        # conditioning. (The reward already uses motor_e_norm; this fixes the obs.)
+        self.energy_obs_norm = (self.motor_e_norm if energy_model == "motor"
+                                else self.E_max_per_step)
         # Conversion (carried in the mixing_index slot) starts ~0, not 1.
         self.I_current = 0.0
 

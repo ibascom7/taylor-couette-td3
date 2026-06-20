@@ -227,7 +227,12 @@ def main():
         warmup_duration=args.warmup_duration, warmup_omega_rpm=args.warmup_omega_rpm,
         ramp_time=args.ramp_time,
     )
-    obs_to_state = make_obs_to_state(env.omega_max, env.E_max_per_step * args.eval_seconds)
+    # Match training's energy-obs normalizer (motor scale, not the mechanical
+    # E_max_per_step) so the policy sees the same state scaling it trained on.
+    obs_to_state = make_obs_to_state(
+        env.omega_max,
+        getattr(env, "energy_obs_norm", env.E_max_per_step) * args.eval_seconds,
+    )
     omega_start = args.warmup_omega_rpm
 
     w0, w1 = (args.window if args.window else

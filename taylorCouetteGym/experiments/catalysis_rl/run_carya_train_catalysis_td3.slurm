@@ -30,7 +30,7 @@
 #SBATCH -n 1
 #SBATCH -c 4                      # pimpleFoam runs SERIALLY; 4 covers torch/numpy
 #SBATCH --mem=12G
-#SBATCH -t 24:0:0                 # cost driven by the 2500 rpm bursts (small dt)
+#SBATCH -t 40:0:0                 # cost driven by the 2500 rpm bursts (small dt)
 #SBATCH --array=0                 # 1 seed; use --array=0-2 for 3 seeds
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
@@ -104,7 +104,7 @@ echo "    case copy: $RUN_CASE   host: $(hostname)"
     --mean-rpm "$MEAN_RPM" --run-seconds "$MAX_STEPS_PER_EP" --scalar-D "$SCALAR_D" \
     --max-co 1.5
 
-# Rebuild the mesh from blockMeshDict (axial 300, not the shipped 600 polyMesh).
+# Rebuild the mesh from blockMeshDict (axial 150, not the shipped 600 polyMesh).
 ( cd "$RUN_CASE" && blockMesh )
 
 # Drop the stale MIXING initial-condition snapshots so the env re-warms a true
