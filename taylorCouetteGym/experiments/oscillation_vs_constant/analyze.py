@@ -7,12 +7,13 @@ each of the form:
     METRICS t=<s> Mz_kin=<..> C0=.. C1=.. .. C19=.. Vz0=.. .. Vz19=..
 C0..C19 are the dye concentration in 20 radial bins at the bottom outlet.
 
-Mixing measure: radial uniformity of that outlet profile.
-  unmixedness(t) = std_dev(C0..C19)           (0 = perfectly mixed)
-  mixing_index(t) = 1 - std/std_inlet         (1 = perfectly mixed, 0 = as
-                    injected; std_inlet = 0.4330 for the inner-1/4 dye band)
+Mixing measure: intensity of segregation of the outlet radial profile.
+  sigma(t) = std_dev(C0..C19)                 (0 = perfectly mixed)
+  I_mix(t) = sigma^2 / sigma_max^2            (0 = perfectly mixed, 1 = as
+             injected; sigma_max = 0.4330 for the inner-1/4 dye band)
+LOWER I_mix = better mixed.
 
-Prints the time-averaged mixing index over the last `--avg-window` seconds
+Prints the time-averaged I_mix over the last `--avg-window` seconds
 (steady-ish tail) for each run and says which mixes better, and writes
 mixing_comparison.png.
 
@@ -58,15 +59,15 @@ def summarize(name, times, bins, avg_window):
         print(f"  {name:<11s}: no METRICS data")
         return None
     unmix = [std(r) for r in bins]
-    midx = [1.0 - s / STD_INLET for s in unmix]
+    imix = [(s / STD_INLET) ** 2 for s in unmix]   # intensity of segregation
     t_end = times[-1]
-    tail = [m for t, m in zip(times, midx) if t >= t_end - avg_window]
+    tail = [m for t, m in zip(times, imix) if t >= t_end - avg_window]
     tail_unmix = [s for t, s in zip(times, unmix) if t >= t_end - avg_window]
-    mean_midx = sum(tail) / len(tail)
+    mean_imix = sum(tail) / len(tail)
     mean_unmix = sum(tail_unmix) / len(tail_unmix)
-    print(f"  {name:<11s}: tail-avg mixing_index={mean_midx:+.4f}  "
-          f"(unmixedness={mean_unmix:.4f})  over last {avg_window:.0f}s of {t_end:.0f}s")
-    return dict(name=name, times=times, midx=midx, unmix=unmix, mean_midx=mean_midx)
+    print(f"  {name:<11s}: tail-avg I_mix={mean_imix:.4f}  "
+          f"(sigma={mean_unmix:.4f})  over last {avg_window:.0f}s of {t_end:.0f}s")
+    return dict(name=name, times=times, imix=imix, unmix=unmix, mean_imix=mean_imix)
 
 
 def main():
@@ -84,7 +85,7 @@ def main():
     if not runs:
         raise SystemExit(f"no *.log found in {args.results_dir}")
 
-    print(f"Mixing comparison (higher mixing_index = better mixed):")
+    print("Mixing comparison (LOWER I_mix = sigma^2/sigma_max^2 = better mixed):")
     summaries = []
     for name, (t, b) in runs.items():
         s = summarize(name, t, b, args.avg_window)
@@ -94,10 +95,10 @@ def main():
     if {"constant", "squarewave"} <= {s["name"] for s in summaries}:
         c = next(s for s in summaries if s["name"] == "constant")
         q = next(s for s in summaries if s["name"] == "squarewave")
-        d = q["mean_midx"] - c["mean_midx"]
-        verdict = "squarewave mixes BETTER" if d > 0 else "constant mixes better"
-        print(f"\n  -> {verdict} by {abs(d):.4f} mixing-index "
-              f"({'+' if d>0 else ''}{d/abs(c['mean_midx'] or 1)*100:.1f}% vs constant)")
+        d = q["mean_imix"] - c["mean_imix"]          # <0 => squarewave more mixed
+        verdict = "squarewave mixes BETTER" if d < 0 else "constant mixes better"
+        print(f"\n  -> {verdict} by {abs(d):.4f} in I_mix "
+              f"(squarewave I_mix {q['mean_imix']:.4f} vs constant {c['mean_imix']:.4f})")
 
     # ---- plot ----
     try:
@@ -110,11 +111,11 @@ def main():
 
     fig, ax = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
     for s in summaries:
-        ax[0].plot(s["times"], s["midx"], label=s["name"])
+        ax[0].plot(s["times"], s["imix"], label=s["name"])
         ax[1].plot(s["times"], s["unmix"], label=s["name"])
-    ax[0].set_ylabel("mixing index  (1 = mixed)")
+    ax[0].set_ylabel(r"$I_{mix}=\sigma^2/\sigma_{\max}^2$  (0 = mixed)")
     ax[0].legend(); ax[0].grid(alpha=0.3)
-    ax[1].set_ylabel("unmixedness  std(C bins)")
+    ax[1].set_ylabel(r"$\sigma$ = std(C bins)")
     ax[1].set_xlabel("time [s]")
     ax[1].grid(alpha=0.3)
     ax[0].set_title("Outlet radial mixing: oscillating vs constant omega")

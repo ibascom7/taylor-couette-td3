@@ -22,16 +22,16 @@
 #SBATCH -e logs/%x_%A_%a.err
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -c 2
+#SBATCH -c 1
 #SBATCH --mem=8G
-#SBATCH -t 12:0:0
+#SBATCH -t 20:0:0
 #SBATCH --array=0-1
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
 
 set -euo pipefail
 
-RUN_SECONDS=120           # dye breakthrough + ~1.5 modulation periods; bump if you want more frames
+RUN_SECONDS=240           # 8 modulation periods (T=30s): transient + a long limit-cycle tail
 MEAN_RPM=500; DUTY=0.2; PERIOD=30; MAX_CO=0.8
 
 MODES=( constant squarewave )
@@ -45,6 +45,9 @@ PYTHON=/project/mwang/ibascom/envs/tc/bin/python
 
 cd "$SLURM_SUBMIT_DIR"
 EXP_DIR="experiments/oscillation_vs_constant"
+
+
+
 mkdir -p "$EXP_DIR/logs" "$EXP_DIR/results"
 
 # ---- case lives on PERSISTENT disk so fields survive ----------------

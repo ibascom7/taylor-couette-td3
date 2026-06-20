@@ -7,8 +7,9 @@ writes four PNGs telling the story honestly:
 
   fig_spacetime.png   space-time map of the outlet radial dye profile C(bin, t),
                       one panel per case -- shows the modulation dynamics vividly.
-  fig_mixing_ts.png   mixing index vs time, both cases, active phases shaded --
-                      the quantitative comparison (squarewave dips during idle).
+  fig_mixing_ts.png   intensity of segregation I_mix=sigma^2/sigma_max^2 vs time,
+                      both cases, active phases shaded -- the quantitative compare
+                      (squarewave SPIKES UP during idle = more segregated).
   fig_radial_profile.png  time-averaged outlet radial profile vs the injected
                       step -- shows BOTH cases are ~flat (why the metric saturates).
   fig_torque.png      inner-cylinder torque vs time -- proves the square-wave
@@ -155,7 +156,9 @@ def main():
                  "(dotted = active-phase edges)")
     _save(fig, args.results_dir, "fig_spacetime.png")
 
-    # ---- 2. mixing index vs time -------------------------------------------
+    # ---- 2. intensity of segregation vs time -------------------------------
+    # I_mix = sigma^2 / sigma_max^2 (Danckwerts intensity of segregation):
+    # 1 = as-injected (fully segregated), 0 = perfectly mixed.  LOWER = better.
     fig, ax = plt.subplots(figsize=(10, 4.5))
     sq = runs.get("squarewave")
     if sq is not None:
@@ -163,10 +166,12 @@ def main():
     for name in order:
         t, _, C, _ = runs[name]
         ctr, u = time_bin(t, unmixed(C), nb=1500)
-        ax.plot(ctr, 1 - u / STD_INLET, color=COLORS.get(name), lw=1.6, label=name)
-    ax.set_xlabel("time [s]"); ax.set_ylabel("mixing index  (1 = fully mixed)")
-    ax.set_ylim(top=1.0); ax.grid(alpha=0.3); ax.legend(loc="lower right")
-    ax.set_title("Outlet mixing index vs time")
+        ax.plot(ctr, (u / STD_INLET) ** 2, color=COLORS.get(name), lw=1.6, label=name)
+    ax.set_xlabel("time [s]")
+    ax.set_ylabel(r"intensity of segregation  $I_{mix}=\sigma^2/\sigma_{\max}^2$"
+                  "   (0 = fully mixed)")
+    ax.set_ylim(bottom=0.0); ax.grid(alpha=0.3); ax.legend(loc="upper right")
+    ax.set_title("Outlet intensity of segregation vs time")
     _save(fig, args.results_dir, "fig_mixing_ts.png")
 
     # ---- 3. time-averaged radial profile -----------------------------------
@@ -179,10 +184,10 @@ def main():
         t, _, C, _ = runs[name]
         m = (t >= pw0) & (t <= pw1)
         prof = C[m].mean(axis=0) if m.any() else np.full(NBINS, np.nan)
-        u = prof.std(); idx = 1 - u / STD_INLET
+        u = prof.std(); Imix = (u / STD_INLET) ** 2
         ax.plot(x, prof, "o-", color=COLORS.get(name), ms=4,
-                label=f"{name} (idx {idx:+.3f})")
-        print(f"  {name:11s} unmixedness={u:.4f}  mixing_index={idx:+.3f}")
+                label=f"{name} ($I_{{mix}}$ {Imix:.4f})")
+        print(f"  {name:11s} sigma={u:.4f}  I_mix={Imix:.4f}")
     ax.set_xlabel("normalized gap position  (0 = inner wall, 1 = outer)")
     ax.set_ylabel("time-avg dye conc C")
     ax.grid(alpha=0.3); ax.legend()
