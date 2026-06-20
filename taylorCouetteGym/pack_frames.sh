@@ -10,6 +10,9 @@
 #   ./pack_frames.sh                 # pack every <algo>/<tag>/frames found
 #   ./pack_frames.sh td3/const_base  # pack just one run dir
 #   ./pack_frames.sh --split td3/full3d_test_s0   # ONE tarball PER episode
+#   ./pack_frames.sh --path experiments/oscillation_vs_constant/paraview/squarewave/tc_mixing_case
+#                                    # ARBITRARY dir -> size-split *.tgz.part-NN
+#                                    #   (any layout; see the --path block below)
 #
 # --split mode writes results/<run>/frames_<ep>.tgz per episode instead of a
 # single frames.tgz. Use it for the full-3D case: one combined archive of
@@ -28,6 +31,39 @@
 
 set -euo pipefail
 cd "$(dirname "$0")"
+
+PART_SIZE="${PART_SIZE:-95M}"   # max bytes per committed part (GitHub hard cap = 100 MB/file)
+
+# ---- --path mode: size-split ANY directory into committable tarball parts ----
+# For trees that don't fit the results/<algo>/<tag>/frames/<episode> layout -- e.g.
+# a ParaView case  experiments/.../paraview/<mode>/tc_mixing_case  whose numbered
+# time-dirs ARE the frames. Packs DIR -> <out>.tgz.part-00,-01,... each < PART_SIZE,
+# so it always clears GitHub's 100 MB/file limit no matter how it compresses (a
+# single part if it already fits -- extraction is identical either way).
+#   ./pack_frames.sh --path <dir> [-o <out-prefix>]
+#     <out-prefix> defaults to <dir> itself (parts land beside it). Pass -o to put
+#     them elsewhere / disambiguate (e.g. two modes both named tc_mixing_case).
+#   Reassemble:  mkdir -p <dir's parent> && cat <out>.tgz.part-* | tar xzf - -C <dir's parent>
+if [ "${1:-}" = "--path" ]; then
+    shift
+    DIR="${1:?usage: pack_frames.sh --path <dir> [-o <out-prefix>]}"; shift
+    OUT="$DIR"
+    if [ "${1:-}" = "-o" ] || [ "${1:-}" = "--out" ]; then
+        shift; OUT="${1:?-o/--out needs an output prefix}"; shift
+    fi
+    [ -d "$DIR" ] || { echo "[err] $DIR is not a directory" >&2; exit 1; }
+    parent=$(dirname "$DIR"); base=$(basename "$DIR")
+    mkdir -p "$(dirname "$OUT")"
+    rm -f "${OUT}".tgz.part-*                        # clear stale parts from a prior run
+    tar czf - -C "$parent" "$base" | split -b "$PART_SIZE" -d - "${OUT}.tgz.part-"
+    parts=( "${OUT}".tgz.part-* )
+    echo "[ok] $DIR -> ${#parts[@]} part(s) (PART_SIZE=$PART_SIZE):"
+    for p in "${parts[@]}"; do echo "       $p  ($(du -h "$p" | cut -f1))"; done
+    echo
+    echo "Commit:   git add ${OUT}.tgz.part-* && git commit -m 'frames' && git push"
+    echo "Restore:  mkdir -p $parent && cat ${OUT}.tgz.part-* | tar xzf - -C $parent"
+    exit 0
+fi
 
 # --split: one tarball per episode (keeps each file under GitHub's 100 MB cap).
 SPLIT=0

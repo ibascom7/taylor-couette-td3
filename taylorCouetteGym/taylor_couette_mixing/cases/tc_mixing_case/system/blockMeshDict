@@ -50,7 +50,11 @@ vertices
 blocks
 (
     //                              radial  azimuthal  axial
-    hex (0 1 2 3 4 5 6 7)          (20     1          600) simpleGrading (1 1 1)
+    // axial 600->150 (keep Gamma=30, the paper's geometry): ~4x fewer cells ->
+    // ~4x cheaper steps. dt is unchanged because it's bound by the finer RADIAL
+    // cells (dr~0.32mm < dz~1.27mm here), not the axial ones. ~10 cells per
+    // Taylor-vortex pair (axial wavelength ~2*gap), still resolved.
+    hex (0 1 2 3 4 5 6 7)          (20     1          150) simpleGrading (1 1 1)
 );
 
 edges

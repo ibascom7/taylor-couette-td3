@@ -1,0 +1,6 @@
+/* dynamicCode:
+ * SHA1 = 1567184ff445ec1435b07213d50b74498fb08ccc
+ */
+functionObjectTemplate.C
+
+LIB = $(PWD)/../platforms/$(WM_OPTIONS)/lib/librlMetrics_1567184ff445ec1435b07213d50b74498fb08ccc

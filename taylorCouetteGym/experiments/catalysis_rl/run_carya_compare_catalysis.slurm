@@ -71,7 +71,10 @@ cp -r "$MASTER_CASE" "$RUN_CASE"
 
 "$PYTHON" "$MAKE_CASE" \
     --case "$RUN_CASE" --geometry wedge --mode constant --catalysis \
-    --mean-rpm "$MEAN_RPM" --run-seconds "$EVAL_SECONDS" --scalar-D "$SCALAR_D"
+    --mean-rpm "$MEAN_RPM" --run-seconds "$EVAL_SECONDS" --scalar-D "$SCALAR_D" \
+    --max-co 1.5
+# Rebuild the mesh from blockMeshDict (axial 300, not the shipped 600 polyMesh).
+( cd "$RUN_CASE" && blockMesh )
 rm -rf "$RUN_CASE/0.warmed" "$RUN_CASE/0.orig"
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}

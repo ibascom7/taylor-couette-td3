@@ -43,7 +43,7 @@ SEEDS=(0 1 2)
 i=${SLURM_ARRAY_TASK_ID:-0}
 SEED=${SEEDS[$i]}
 
-# ---- geometry / normalizer (2D wedge tc_mixing_case, ~800 cells) ----
+# ---- geometry / normalizer (2D wedge tc_mixing_case, 20x1x150 = 3000 cells) ----
 R_IN=25.4
 R_OUT=31.75
 E_MAX_PER_STEP=0.0011017031875434   # 1 s @ ~500 rpm on the wedge (reward energy scale)
@@ -101,7 +101,11 @@ echo "    case copy: $RUN_CASE   host: $(hostname)"
 # RL env overwrites omega every step.
 "$PYTHON" "$MAKE_CASE" \
     --case "$RUN_CASE" --geometry wedge --mode constant --catalysis \
-    --mean-rpm "$MEAN_RPM" --run-seconds "$MAX_STEPS_PER_EP" --scalar-D "$SCALAR_D"
+    --mean-rpm "$MEAN_RPM" --run-seconds "$MAX_STEPS_PER_EP" --scalar-D "$SCALAR_D" \
+    --max-co 1.5
+
+# Rebuild the mesh from blockMeshDict (axial 300, not the shipped 600 polyMesh).
+( cd "$RUN_CASE" && blockMesh )
 
 # Drop the stale MIXING initial-condition snapshots so the env re-warms a true
 # CATALYTIC 0.warmed/0.orig from the catalysis 0/ make_case just wrote.

@@ -283,12 +283,23 @@ def main():
             **{k: np.asarray(v) for k, v in params.items()},
         )
         np.savez(cache, **sweep)
-        # snapshot the canonical baselines for ParaView (fresh runs only)
-        rollout(env, obs_to_state, "constant", args.eval_seconds, mean_rpm=500.0,
-                seed=args.seed, snapshot_dir=os.path.join(args.out, "frames_constant"))
-        rollout(env, obs_to_state, "squarewave", args.eval_seconds, mean_rpm=500.0,
+
+    # ---- canonical baseline frames for ParaView ------------------------
+    # Same style as the prescribed oscillation_vs_constant runs: per-second time
+    # dirs + a .foam file (snapshot_frames). Each is a full eval_seconds CFD
+    # rollout, so only (re)generate when the frames dir is missing -- this keeps
+    # the baseline_sweep.npz cache's compute savings on re-runs (e.g. after
+    # retraining) while still GUARANTEEING the frames exist after any run.
+    for kind, fdir in [("constant", "frames_constant"),
+                       ("squarewave", "frames_squarewave")]:
+        dpath = os.path.join(args.out, fdir)
+        if os.path.isdir(dpath):
+            print(f"[compare] {fdir}/ exists -> keeping (skip CFD rollout)")
+            continue
+        print(f"[compare] writing ParaView frames -> {fdir}/")
+        rollout(env, obs_to_state, kind, args.eval_seconds, mean_rpm=500.0,
                 duty=args.duty, period=args.period, seed=args.seed,
-                snapshot_dir=os.path.join(args.out, "frames_squarewave"))
+                snapshot_dir=dpath)
 
     # ---- TD3 agent (always fresh) --------------------------------------
     policy = TD3.TD3(3, env.action_space.shape[0], 1.0)

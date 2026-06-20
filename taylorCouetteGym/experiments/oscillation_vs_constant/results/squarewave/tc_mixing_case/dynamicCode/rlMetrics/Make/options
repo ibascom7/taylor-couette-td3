@@ -1,0 +1,18 @@
+/* dynamicCode:
+ * SHA1 = 1567184ff445ec1435b07213d50b74498fb08ccc
+ */
+EXE_INC = -g \
+-I$(LIB_SRC)/finiteVolume/lnInclude \
+-I$(LIB_SRC)/meshTools/lnInclude \
+-I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
+            -I$(LIB_SRC)/TurbulenceModels/incompressible/lnInclude \
+            -I$(LIB_SRC)/transportModels \
+            -I$(LIB_SRC)/transportModels/incompressible/lnInclude
+
+LIB_LIBS = \
+    -lOpenFOAM \
+    -lfiniteVolume \
+    -lmeshTools \
+-lincompressibleTurbulenceModels \
+            -lturbulenceModels \
+            -lincompressibleTransportModels

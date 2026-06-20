@@ -1,0 +1,42 @@
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volVectorField;
+    object          U;
+}
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 0 0 0 );
+
+boundaryField
+{
+    "inner_wall"
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           52.359878;   // 500.0 rpm, constant
+    }
+    "outer_wall"
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           0;
+    }
+    "top"
+    {
+        type            fixedValue;
+        value           uniform ( 0 0 -0.001462 );   // u_ax = Q0/A (100 mL/min)
+    }
+    "bottom"
+    {
+        type            inletOutlet;
+        inletValue      uniform ( 0 0 0 );
+        value           uniform ( 0 0 0 );
+    }
+    "front"         { type wedge; }
+    "back"          { type wedge; }
+}
