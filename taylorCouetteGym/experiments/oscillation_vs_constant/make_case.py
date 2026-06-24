@@ -455,7 +455,13 @@ FoamFile
 
 application     pimpleFoam;
 
-startFrom       startTime;
+// latestTime, NOT startTime: the RL env steps pimpleFoam ONE second at a time and
+// relies on each call CONTINUING from the last written time dir (it only bumps
+// endTime). With `startFrom startTime; startTime 0` every step re-simulates 0->N
+// instead -> O(N^2) wall (dt grows ~linearly with the step index) AND the per-step
+// omega set on the latest dir is ignored. latestTime is also correct for the
+// single-shot prescribed runs (latest == 0 at the start of a fresh case).
+startFrom       latestTime;
 startTime       0;
 
 stopAt          endTime;
