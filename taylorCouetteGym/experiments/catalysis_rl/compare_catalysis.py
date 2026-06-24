@@ -188,7 +188,12 @@ def cache_valid(npz, params):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--case", required=True)
-    ap.add_argument("--policy", required=True, help="TD3 checkpoint prefix, e.g. .../td3_tc_final")
+    ap.add_argument("--policy", default=None,
+                    help="TD3 checkpoint prefix, e.g. .../td3_tc_final. Omit (or pass "
+                         "--baselines-only) to run ONLY the constant+pulsating sweeps -- "
+                         "the paper's Fig 7 / Fig 11 reproduction -- with no agent.")
+    ap.add_argument("--baselines-only", action="store_true",
+                    help="skip the TD3 agent even if --policy is given (paper sweep only)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--eval-seconds", type=int, default=60)
     ap.add_argument("--const-rpm", default="300,500,700,900,1200",
@@ -306,14 +311,19 @@ def main():
                 duty=args.duty, period=args.period, seed=args.seed,
                 snapshot_dir=dpath)
 
-    # ---- TD3 agent (always fresh) --------------------------------------
-    policy = TD3.TD3(3, env.action_space.shape[0], 1.0)
-    policy.load(args.policy)
-    print(f"[compare] loaded policy {args.policy}")
-    print("=== td3 agent ===")
-    td3 = rollout(env, obs_to_state, "td3", args.eval_seconds, policy=policy, seed=args.seed,
-                  snapshot_dir=os.path.join(args.out, "frames_td3"))
-    td3s = summarize(td3, w0, w1, omega_start, args.ramp_time)
+    # ---- TD3 agent (optional; skipped for a baselines-only paper reproduction) ----
+    td3 = td3s = None
+    if args.policy and not args.baselines_only:
+        policy = TD3.TD3(3, env.action_space.shape[0], 1.0)
+        policy.load(args.policy)
+        print(f"[compare] loaded policy {args.policy}")
+        print("=== td3 agent ===")
+        td3 = rollout(env, obs_to_state, "td3", args.eval_seconds, policy=policy, seed=args.seed,
+                      snapshot_dir=os.path.join(args.out, "frames_td3"))
+        td3s = summarize(td3, w0, w1, omega_start, args.ramp_time)
+    else:
+        print("[compare] baselines-only: constant+pulsating sweeps reproduce the paper "
+              "(no TD3 agent)")
 
     # ---- report --------------------------------------------------------
     L = [f"CATALYSIS comparison (paper-style: equal conversion, motor power model)",
@@ -336,15 +346,16 @@ def main():
         L.append(f"  conv={g['conv']:.3f}: pulsating {g['p_puls']:6.2f} W vs "
                  f"constant {g['p_const']:6.2f} W  ->  {g['savings']:+5.1f}% power{flag}")
 
-    # TD3 verdict
     cc_order = np.argsort(sweep["const_conv"])
-    p_const_at_td3 = float(np.interp(td3s["conv"], np.asarray(sweep["const_conv"])[cc_order],
-                                     np.asarray(sweep["const_motor"])[cc_order]))
-    L += ["", "TD3 agent:",
-          f"  conv={td3s['conv']:.3f}  mean_omega={td3s['omega_mean']:.0f} rpm  "
-          f"motor_P={td3s['motor_W']:.2f} W  drag_P={td3s['drag_W']:.4f} W",
-          f"  vs constant at equal conversion ({p_const_at_td3:.2f} W): "
-          f"{(p_const_at_td3 - td3s['motor_W'])/p_const_at_td3*100:+.1f}% power"]
+    if td3s is not None:
+        # TD3 verdict
+        p_const_at_td3 = float(np.interp(td3s["conv"], np.asarray(sweep["const_conv"])[cc_order],
+                                         np.asarray(sweep["const_motor"])[cc_order]))
+        L += ["", "TD3 agent:",
+              f"  conv={td3s['conv']:.3f}  mean_omega={td3s['omega_mean']:.0f} rpm  "
+              f"motor_P={td3s['motor_W']:.2f} W  drag_P={td3s['drag_W']:.4f} W",
+              f"  vs constant at equal conversion ({p_const_at_td3:.2f} W): "
+              f"{(p_const_at_td3 - td3s['motor_W'])/p_const_at_td3*100:+.1f}% power"]
     report = "\n".join(L)
     print("\n" + report)
     with open(os.path.join(args.out, "summary.txt"), "w") as f:
@@ -357,8 +368,9 @@ def main():
             "o-", color=C_CONST, label="constant")
     ax.plot(np.asarray(sweep["puls_means"])[op], np.asarray(sweep["puls_conv"])[op],
             "^:", color=C_PULS, label=f"pulsating (D={args.duty}, T={args.period:.0f}s)")
-    ax.scatter([td3s["omega_mean"]], [td3s["conv"]], marker="*", s=260, color=C_TD3,
-               zorder=5, label="TD3 (at mean omega)")
+    if td3s is not None:
+        ax.scatter([td3s["omega_mean"]], [td3s["conv"]], marker="*", s=260, color=C_TD3,
+                   zorder=5, label="TD3 (at mean omega)")
     ax.set_xlabel("mean angular speed [rpm]"); ax.set_ylabel("conversion (1 - cup outlet C)")
     ax.set_title("Conversion vs mean speed (Fig. 7 style)\n"
                  "pulsating reaches a given conversion at LOWER mean speed")
@@ -373,8 +385,9 @@ def main():
     pp = np.argsort(sweep["puls_conv"])
     ax.plot(np.asarray(sweep["puls_conv"])[pp], np.asarray(sweep["puls_motor"])[pp],
             "^:", color=C_PULS, label="pulsating")
-    ax.scatter([td3s["conv"]], [td3s["motor_W"]], marker="*", s=260, color=C_TD3,
-               zorder=5, label="TD3")
+    if td3s is not None:
+        ax.scatter([td3s["conv"]], [td3s["motor_W"]], marker="*", s=260, color=C_TD3,
+                   zorder=5, label="TD3")
     ax.set_xlabel("conversion (1 - cup outlet C)"); ax.set_ylabel("avg motor power [W]")
     ax.set_title("Power vs conversion (Fig. 11 style)\n"
                  "lower at equal conversion = cheaper; pulsating should sit below")
@@ -384,9 +397,11 @@ def main():
 
     # ---- Fig. 3 style: omega(t) waveforms (with ramps) -----------------
     fig, ax = plt.subplots(figsize=(10, 4.5))
-    for label, om, color in [("constant 500", sweep["cc_omega"], C_CONST),
-                             ("square mean 500", sweep["cp_omega"], C_PULS),
-                             ("TD3", td3["omega"], C_TD3)]:
+    waveforms = [("constant 500", sweep["cc_omega"], C_CONST),
+                 ("square mean 500", sweep["cp_omega"], C_PULS)]
+    if td3 is not None:
+        waveforms.append(("TD3", td3["omega"], C_TD3))
+    for label, om, color in waveforms:
         tf, wf = reconstruct_omega(np.asarray(om), omega_start, args.ramp_time)
         ax.plot(tf, wf, color=color, lw=1.4, label=label)
     ax.set_xlabel("time [s]"); ax.set_ylabel("inner-cylinder omega [rpm]")
@@ -401,7 +416,8 @@ def main():
         ax.axvspan(a, b, color="0.88", label="square-wave active" if i == 0 else None)
     ax.plot(sweep["cc_t"], sweep["cc_conv"], color=C_CONST, lw=1.4, label="constant 500")
     ax.plot(sweep["cp_t"], sweep["cp_conv"], color=C_PULS, lw=1.4, label="square mean 500")
-    ax.plot(td3["t"], td3["conv"], color=C_TD3, lw=1.4, label="TD3")
+    if td3 is not None:
+        ax.plot(td3["t"], td3["conv"], color=C_TD3, lw=1.4, label="TD3")
     ax.axvspan(w0, w1, color="gold", alpha=0.15, label="averaging window")
     ax.set_xlabel("time [s]"); ax.set_ylabel("conversion (1 - cup outlet C)")
     ax.set_title("Conversion vs time"); ax.grid(alpha=0.3); ax.legend()

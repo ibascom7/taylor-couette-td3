@@ -56,21 +56,29 @@ EXP_DIR="experiments/catalysis_rl"
 mkdir -p "$EXP_DIR/logs"
 MAKE_CASE="experiments/oscillation_vs_constant/make_case.py"
 
+# Set BASELINES_ONLY=1 to run ONLY the constant+pulsating sweeps -- the paper's
+# Fig 7 / Fig 11 reproduction -- with no TD3 agent (e.g. before any policy exists):
+#     BASELINES_ONLY=1 sbatch experiments/catalysis_rl/run_carya_compare_catalysis.slurm
+BASELINES_ONLY=${BASELINES_ONLY:-0}
 POLICY_DIR="$EXP_DIR/results/td3/catalysis_s${SEED}"
 POLICY="$POLICY_DIR/td3_tc_final"
-if [ ! -f "${POLICY}_actor" ]; then
-    # Training reaches td3_tc_final only after ALL --max_timesteps steps. If the
-    # 24h wall cut it short, fall back to the newest periodic checkpoint
-    # (td3_tc_t<N>, written every --save_every steps) so a near-miss is still
-    # comparable instead of erroring out.
+POLICY_ARGS="--baselines-only"
+if [ "$BASELINES_ONLY" = "1" ]; then
+    echo "BASELINES_ONLY=1 -> constant+pulsating sweep only (no TD3 agent)"
+elif [ -f "${POLICY}_actor" ]; then
+    POLICY_ARGS="--policy $POLICY"
+else
+    # No td3_tc_final (e.g. training timed out). Prefer the newest periodic
+    # checkpoint (td3_tc_t<N>); if none exists yet, run baselines-only so the
+    # paper sweep still completes instead of erroring out.
     LATEST=$(ls -1 "$POLICY_DIR"/td3_tc_t*_actor 2>/dev/null \
              | sed -E 's#.*/td3_tc_t([0-9]+)_actor#\1 &#' | sort -n | tail -1 | cut -d' ' -f2-)
     if [ -n "${LATEST:-}" ]; then
         POLICY="${LATEST%_actor}"
         echo "WARNING: no td3_tc_final; using newest checkpoint $(basename "$POLICY")" >&2
+        POLICY_ARGS="--policy $POLICY"
     else
-        echo "ERROR: no policy (td3_tc_final or td3_tc_t*) in $POLICY_DIR -- train first." >&2
-        exit 1
+        echo "no trained policy yet -> baselines-only (sweep reproduces the paper)" >&2
     fi
 fi
 
@@ -97,7 +105,7 @@ echo "=== compare catalysis seed=$SEED -> $OUT ==="
 
 "$PYTHON" "$EXP_DIR/compare_catalysis.py" \
     --case "$RUN_CASE" \
-    --policy "$POLICY" \
+    $POLICY_ARGS \
     --out "$OUT" \
     --eval-seconds "$EVAL_SECONDS" \
     --const-rpm "$CONST_RPM" --puls-rpm "$PULS_RPM" \
