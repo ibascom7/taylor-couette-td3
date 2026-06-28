@@ -95,7 +95,22 @@ class Helpers():
              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         return True
-    
+
+    def set_write_interval(self, dt):
+        """Set controlDict writeInterval so a field dir is written at EVERY step
+        boundary. The env continues from the latest WRITTEN time each step, so with
+        `writeControl adjustableRunTime` the step boundary (endTime = latest+time_step)
+        is only written when it is a multiple of writeInterval. time_step < writeInterval
+        (e.g. the freeform 0.5 s step vs writeInterval 1) -> nothing is written at
+        0.5, 1.5, ... and _get_latest_time never advances. So writeInterval == time_step."""
+        subprocess.run(
+            ["foamDictionary", "-entry", "writeInterval", "-set", repr(float(dt)),
+             "system/controlDict"],
+            cwd=self.case_path, check=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        return True
+
     def reset_case(self, mode="hard"):
         """Reset the OpenFOAM case between RL episodes.
 
@@ -259,6 +274,36 @@ class Helpers():
             raise RuntimeError(f"No METRICS in pimpleFoam output:\n{result.stderr[-500:]}")
         step_metrics = [self._parse_metrics(l) for l in metric_lines]
         return step_metrics
+
+    def do_simulation_table(self, points, time_step):
+        """Like do_simulation but drives inner-wall omega from an explicit
+        tabulated Function1 -- `points` = list of (absolute_time, omega_rad) --
+        over the next `time_step` seconds. Used by the waveform env to run a full
+        square-wave segment per control step. Continues from the latest time dir
+        (controlDict startFrom latestTime), same step-loop contract as do_simulation."""
+        latest = self._get_latest_time()
+        table = "table (" + " ".join(f"({t:.6f} {w:.6f})" for t, w in points) + ")"
+        subprocess.run(
+            ["foamDictionary",
+             "-entry", "boundaryField.inner_wall.omega",
+             "-set", table, f"{latest}/U"],
+            cwd=self.case_path, check=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        self._update_end_time(time_step)
+        result = subprocess.run(
+            ["pimpleFoam"], cwd=self.case_path, capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"pimpleFoam failed (exit {result.returncode}) on waveform table\n"
+                f"--- stderr (tail) ---\n{result.stderr[-2000:]}\n"
+                f"--- stdout (tail) ---\n{result.stdout[-2000:]}"
+            )
+        metric_lines = [l for l in result.stdout.splitlines() if l.startswith("METRICS")]
+        if not metric_lines:
+            raise RuntimeError(f"No METRICS in pimpleFoam output:\n{result.stderr[-500:]}")
+        return [self._parse_metrics(l) for l in metric_lines]
     
         
 

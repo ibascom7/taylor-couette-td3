@@ -18,8 +18,13 @@ FoamFile
 //   Inner radius:  0.0254 m   (25.4 mm)
 //   Outer radius:  0.03175 m  (31.75 mm)
 //   Gap:           0.00635 m  (6.35 mm)
-//   Height:        0.1905 m   (190.5 mm)
-//   Aspect ratio:  30
+//   Height:        0.0381 m   (38.1 mm)   <- 1/5 of the paper's 0.1905 m (advisor:
+//                  the full-length rig is too expensive to simulate). Halves all
+//                  per-step CFD cost AND cuts the residence time tau_res = H/u_ax
+//                  from ~130 s to ~26 s, so an episode now spans 2-5 tau_res and
+//                  conversion reaches quasi-steady WITHIN a window (fixes the
+//                  residence-time/idle-collapse validity problem).
+//   Aspect ratio:  6   (Gamma = H/gap = 0.0381/0.00635)
 //   Radius ratio:  0.8
 //   Wedge angle:   5 degrees (half-angle 2.5 deg)
 //
@@ -30,42 +35,49 @@ convertToMeters 1;
 
 vertices
 (
-    // Bottom (z = -0.09525), -y wedge face
-    ( 0.02537582 -0.00110793 -0.09525)   // 0  inner, -2.5 deg
-    ( 0.03171978 -0.00138492 -0.09525)   // 1  outer, -2.5 deg
+    // Bottom (z = -0.01905), -y wedge face
+    ( 0.02537582 -0.00110793 -0.01905)   // 0  inner, -2.5 deg
+    ( 0.03171978 -0.00138492 -0.01905)   // 1  outer, -2.5 deg
 
-    // Bottom (z = -0.09525), +y wedge face
-    ( 0.03171978  0.00138492 -0.09525)   // 2  outer, +2.5 deg
-    ( 0.02537582  0.00110793 -0.09525)   // 3  inner, +2.5 deg
+    // Bottom (z = -0.01905), +y wedge face
+    ( 0.03171978  0.00138492 -0.01905)   // 2  outer, +2.5 deg
+    ( 0.02537582  0.00110793 -0.01905)   // 3  inner, +2.5 deg
 
-    // Top (z = 0.09525), -y wedge face
-    ( 0.02537582 -0.00110793  0.09525)   // 4  inner, -2.5 deg
-    ( 0.03171978 -0.00138492  0.09525)   // 5  outer, -2.5 deg
+    // Top (z = 0.01905), -y wedge face
+    ( 0.02537582 -0.00110793  0.01905)   // 4  inner, -2.5 deg
+    ( 0.03171978 -0.00138492  0.01905)   // 5  outer, -2.5 deg
 
-    // Top (z = 0.09525), +y wedge face
-    ( 0.03171978  0.00138492  0.09525)   // 6  outer, +2.5 deg
-    ( 0.02537582  0.00110793  0.09525)   // 7  inner, +2.5 deg
+    // Top (z = 0.01905), +y wedge face
+    ( 0.03171978  0.00138492  0.01905)   // 6  outer, +2.5 deg
+    ( 0.02537582  0.00110793  0.01905)   // 7  inner, +2.5 deg
 );
 
 blocks
 (
     //                              radial  azimuthal  axial
-    // axial 600->150 (keep Gamma=30, the paper's geometry): ~4x fewer cells ->
-    // ~4x cheaper steps. dt is unchanged because it's bound by the finer RADIAL
-    // cells (dr~0.32mm < dz~1.27mm here), not the axial ones. ~10 cells per
-    // Taylor-vortex pair (axial wavelength ~2*gap), still resolved.
-    hex (0 1 2 3 4 5 6 7)          (20     1          150) simpleGrading (1 1 1)
+    // Balanced for SPEED + ParaView + a resolved catalytic boundary layer. The
+    // earlier 50x120 with grading 0.2 made 51 um outer-wall cells whose tiny
+    // VOLUME craters the adjustable-dt Courant limit (Co = 0.5*sum|phi|*dt/V, so
+    // small V -> small dt): dt fell to ~1.2e-4 s -> ~300 s wall per simulated
+    // second. Softer grading + fewer cells restores dt:
+    //  - radial 32, grading 0.5 -> outer (catalytic) cell ~0.15 mm: still ~2x
+    //    finer than uniform for the BL, but NOT a dt-killing sliver.
+    //  - axial 96 -> dz ~0.40 mm, ~32 cells per Taylor-vortex pair (smooth in
+    //    ParaView; H/(2*gap) ~ 3 pairs).
+    // Total 32x1x96 = 3072 cells (~half the 6000, near the old 3000 that ran at
+    // ~20-30 s/sim-second).
+    hex (0 1 2 3 4 5 6 7)          (32     1          96) simpleGrading (0.5 1 1)
 );
 
 edges
 (
     // Bottom arcs (midpoint on the x-axis, y=0)
-    arc 0 3  (0.0254   0  -0.09525)
-    arc 1 2  (0.03175  0  -0.09525)
+    arc 0 3  (0.0254   0  -0.01905)
+    arc 1 2  (0.03175  0  -0.01905)
 
     // Top arcs
-    arc 4 7  (0.0254   0   0.09525)
-    arc 5 6  (0.03175  0   0.09525)
+    arc 4 7  (0.0254   0   0.01905)
+    arc 5 6  (0.03175  0   0.01905)
 );
 
 boundary

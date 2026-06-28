@@ -29,6 +29,9 @@ from taylor_couette_mixing.envs.taylor_couette_constant_omega import (
 from taylor_couette_mixing.envs.taylor_couette_catalysis import (
     TaylorCouetteCatalysisEnv,
 )
+from taylor_couette_mixing.envs.taylor_couette_waveform import (
+    TaylorCouetteWaveformEnv,
+)
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -71,25 +74,41 @@ class ReplayBuffer(object):
         )
 
 
-def make_obs_to_state(omega_max, energy_norm):
+def make_obs_to_state(omega_max, energy_norm, period_logmin=None, period_logmax=None):
     """Build a Dict-obs -> flat normalized state adapter.
 
-    The three observed quantities live on very different scales (raw omega
-    ~±300 vs cumulative energy ~1e-2 J), so without rescaling the energy and
-    mixing signals are swamped in the network. Each is mapped to ~[-1, 1]:
+    The base three observed quantities live on very different scales (raw omega
+    ~±300 vs cumulative energy ~1e-2 J), so each is mapped to ~[-1, 1]:
       omega              -> omega / omega_max        in [-1, 1]
       mixing_index       -> 2*I - 1   (I in [0, 1])  in [-1, 1]
       energy_consumption -> E / energy_norm          in ~[0, 1]
+    Optional catalysis/waveform extras are appended IFF the env supplies them, so
+    state_dim adapts to the env (read it off the returned vector, don't hardcode):
+      wf_norm  -> as-is (already a conversion-equivalent in ~[0, 1])  [catalysis]
+      peak     -> peak / omega_max                              [waveform]
+      duty     -> as-is (a fraction in ~[0, 1])                 [waveform]
+      period   -> (logT - logTmin)/(logTmax - logTmin) in [0,1] [waveform]
     """
     def obs_to_state(obs):
-        return np.array(
-            [
-                float(obs["omega"]) / omega_max,
-                2.0 * float(obs["mixing_index"]) - 1.0,
-                float(obs["energy_consumption"]) / energy_norm,
-            ],
-            dtype=np.float32,
-        )
+        s = [
+            float(obs["omega"]) / omega_max,
+            2.0 * float(obs["mixing_index"]) - 1.0,
+            float(obs["energy_consumption"]) / energy_norm,
+        ]
+        if "wf_norm" in obs:
+            s.append(float(obs["wf_norm"]))
+        if "phase" in obs:                      # freeform agent: episode clock in [0,1]
+            s.append(float(obs["phase"]))
+        if "peak" in obs:                       # waveform agent sees its own wave
+            s.append(float(obs["peak"]) / omega_max)
+            s.append(float(obs["duty"]))
+            if (period_logmin is not None and period_logmax is not None
+                    and period_logmax > period_logmin):
+                s.append((np.log(max(float(obs["period"]), 1e-9)) - period_logmin)
+                         / (period_logmax - period_logmin))
+            else:
+                s.append(float(obs["period"]))
+        return np.array(s, dtype=np.float32)
 
     return obs_to_state
 
@@ -121,7 +140,8 @@ def _pad_to_grid(episodes):
 
 
 def save_logs(run_dir, episode_returns, episode_end_steps,
-              omega_history, reward_history, ep_omegas, ep_rewards):
+              omega_history, reward_history, ep_omegas, ep_rewards,
+              conv_history=None, ep_convs=None):
     """Persist all per-run logs read by plot_comparison.py / DDPG_eval.py.
 
       - episode_returns.npy:   total return of each completed episode
@@ -129,6 +149,10 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
                                (x-axis for return-vs-timesteps curves)
       - omega_per_step.npy:    chosen angular velocity (rpm), [episode, step]
       - reward_per_step.npy:   reward, [episode, step]
+      - conv_per_step.npy:     OVERALL CONVERSION, [episode, step] (catalysis env;
+                               the reward is driven by wallFlux, but conversion is
+                               recorded here so each episode's end-of-step / mean
+                               conversion is available for the paper comparison)
     The in-progress episode is included in the per-step grids so periodic saves
     capture the latest steps.
     """
@@ -138,6 +162,9 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
     reward_grid = _pad_to_grid(reward_history + ([ep_rewards] if ep_rewards else []))
     np.save(os.path.join(run_dir, "omega_per_step.npy"), omega_grid)
     np.save(os.path.join(run_dir, "reward_per_step.npy"), reward_grid)
+    if conv_history is not None:
+        conv_grid = _pad_to_grid(conv_history + ([ep_convs] if ep_convs else []))
+        np.save(os.path.join(run_dir, "conv_per_step.npy"), conv_grid)
 
 
 if __name__ == "__main__":
@@ -196,6 +223,36 @@ if __name__ == "__main__":
                              "previous omega to the new one each step (finite "
                              "acceleration -> bounded Courant; mirrors make_case.py's "
                              "square-wave ramps). 0 = instantaneous jump.")
+    parser.add_argument("--freeform_dt", type=float, default=1.0,
+                        help="[freeform mode] seconds of sim per control step at which the "
+                             "agent paints omega(t). Sets writeInterval = this (env continues "
+                             "from the latest written dir). 1.0 = same cadence as omega + a "
+                             "clock; 0.5 = finer + 2x transitions but 2x field writes.")
+    parser.add_argument("--control_mode",
+                        choices=["omega", "freeform", "waveform_adaptive", "waveform_episode"],
+                        default="omega",
+                        help="[catalysis env] what the agent controls. omega: an ABSOLUTE "
+                             "omega each step -> best CONSTANT (deterministic policy = fixed "
+                             "point). freeform: absolute omega every --freeform_dt s WITH an "
+                             "episode clock in the state, so the policy can learn a messy "
+                             "free-form omega(t) (the modulation agent). waveform_adaptive: "
+                             "the agent updates (mean omega0, depth, period) every "
+                             "--control_dt s and the env runs that square wave, carrying "
+                             "phase (stepwise RL). waveform_episode: agent picks ONE "
+                             "(omega0, depth, period) per episode, run for "
+                             "--episode_duration s, reward = windowed conversion - energy "
+                             "(black-box optimization of the paper's waveform params).")
+    parser.add_argument("--control_dt", type=float, default=10.0,
+                        help="[waveform_adaptive] seconds per control update.")
+    parser.add_argument("--period_min", type=float, default=5.0,
+                        help="[waveform modes] min square-wave period the agent can pick (s).")
+    parser.add_argument("--period_max", type=float, default=30.0,
+                        help="[waveform modes] max square-wave period the agent can pick (s).")
+    parser.add_argument("--duty_min", type=float, default=0.1,
+                        help="[waveform modes] min duty cycle (fraction of each period at "
+                             "the burst peak; low duty = brief bursts, the paper's regime).")
+    parser.add_argument("--duty_max", type=float, default=1.0,
+                        help="[waveform modes] max duty cycle (1.0 = constant at the peak).")
     parser.add_argument("--results_dir", default=None,
                         help="Override the results root (default: <gym>/results). Runs "
                              "land in <results_dir>/<algo>/<tag>/. Use to keep an "
@@ -298,13 +355,11 @@ if __name__ == "__main__":
         if capture_dir:
             os.makedirs(capture_dir, exist_ok=True)
         if args.env == "catalysis":
-            # Stepwise control on the catalytic-wall case: the agent picks an
-            # absolute omega each second; reward = conversion - energy. Conversion
-            # is carried in the obs/info "mixing_index" slot (see env docstring),
-            # so obs_to_state and all logging below work unchanged.
-            env = TaylorCouetteCatalysisEnv(
+            # Catalytic-wall case. --control_mode picks WHAT the agent controls;
+            # all three carry conversion in the obs/info "mixing_index" slot and the
+            # mean omega in the "omega" slot, so obs_to_state + logging are unchanged.
+            cat_kwargs = dict(
                 case_path=args.case_path,
-                max_steps=max_steps_per_ep,
                 r_in=args.r_in,
                 r_out=args.r_out,
                 E_max_per_step=args.e_max_per_step,
@@ -317,6 +372,33 @@ if __name__ == "__main__":
                 capture_episodes=capture_episodes,
                 capture_dir=capture_dir,
             )
+            if args.control_mode == "omega":
+                # Original: absolute omega each second.
+                env = TaylorCouetteCatalysisEnv(max_steps=max_steps_per_ep, **cat_kwargs)
+            elif args.control_mode == "freeform":
+                # Direct absolute-omega control at a SHORT timestep + an episode clock
+                # in the state, so the agent can paint a free-form (messy) omega(t)
+                # instead of collapsing to the best constant. action_dim=1 like omega;
+                # state gains a "phase" element (state_dim derived below).
+                env = TaylorCouetteCatalysisEnv(
+                    max_steps=max_steps_per_ep,
+                    time_step=args.freeform_dt,
+                    clock_in_obs=True,
+                    **cat_kwargs,
+                )
+            else:
+                # Waveform control: action = (mean omega0, depth, period).
+                env = TaylorCouetteWaveformEnv(
+                    per_episode=(args.control_mode == "waveform_episode"),
+                    control_dt=args.control_dt,
+                    episode_duration=args.episode_duration,
+                    period_min=args.period_min,
+                    period_max=args.period_max,
+                    duty_min=args.duty_min,
+                    duty_max=args.duty_max,
+                    max_steps=max_steps_per_ep,   # forced to 1 internally if per_episode
+                    **cat_kwargs,
+                )
         else:
             env = TaylorCouetteMixingEnv(
                 case_path=args.case_path,
@@ -332,26 +414,32 @@ if __name__ == "__main__":
         # Normalize the cumulative-energy obs to ~O(1). The catalysis env exposes
         # energy_obs_norm matching its energy model (motor vs mechanical); the
         # mixing env has no such attr, so fall back to E_max_per_step.
-        energy_norm = getattr(env, "energy_obs_norm", env.E_max_per_step) * max_steps_per_ep
+        energy_norm = getattr(env, "energy_obs_norm", env.E_max_per_step) * env.max_steps
 
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    # Normalize obs to ~[-1, 1].
+    # Normalize obs to ~[-1, 1]. The waveform env also exposes its (peak,duty,
+    # period); pass the period log-bounds so they normalize to ~[0,1].
     obs_to_state = make_obs_to_state(
         omega_max=env.omega_max,
         energy_norm=energy_norm,
+        period_logmin=getattr(env, "_logTmin", None),
+        period_logmax=getattr(env, "_logTmax", None),
     )
-    state_dim = 3   # omega, mixing_index, energy_consumption
+    # First-episode reset, and derive state_dim from the obs the env actually
+    # emits: 3 (mixing env), 4 (catalysis: +wf_norm), 7 (waveform: +peak,duty,period).
+    obs, info = env.reset(seed=seed, options={"reset_mode": "hard"})
+    state = obs_to_state(obs)
+    state_dim = state.shape[0]
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])  # 1.0
+    print(f"[{algo} s{seed}] state_dim={state_dim} action_dim={action_dim} "
+          f"(control_mode={getattr(args,'control_mode','n/a')})")
 
     policy = make_policy(algo, state_dim, action_dim, max_action, discount, tau)
 
     replay_buffer = ReplayBuffer(state_dim, action_dim)
-
-    obs, info = env.reset(seed=seed, options={"reset_mode": "hard"})
-    state = obs_to_state(obs)
 
     episode_reward = 0.0
     episode_timesteps = 0
@@ -362,8 +450,10 @@ if __name__ == "__main__":
     # Per-step logs, grouped by episode for later [episode, step] grids.
     omega_history = []   # completed episodes' chosen omega (rpm) per step
     reward_history = []  # completed episodes' reward per step
+    conv_history = []    # completed episodes' conversion per step (mixing_index slot)
     ep_omegas = []       # current (in-progress) episode
     ep_rewards = []
+    ep_convs = []
 
     total_start = time.time()
 
@@ -393,6 +483,7 @@ if __name__ == "__main__":
         episode_reward += reward
         ep_omegas.append(float(next_obs["omega"]))
         ep_rewards.append(float(reward))
+        ep_convs.append(float(info["mixing_index"]))   # conversion (catalysis env)
 
         if t >= start_timesteps:
             policy.train(replay_buffer, batch_size)
@@ -409,6 +500,7 @@ if __name__ == "__main__":
             episode_end_steps.append(t + 1)
             omega_history.append(ep_omegas)
             reward_history.append(ep_rewards)
+            conv_history.append(ep_convs)
             print(
                 f"--- episode {episode_num} done. "
                 f"return={episode_reward:.3f} len={episode_timesteps} ---"
@@ -420,15 +512,18 @@ if __name__ == "__main__":
             episode_num += 1
             ep_omegas = []
             ep_rewards = []
+            ep_convs = []
 
         if (t + 1) % save_every == 0:
             policy.save(f"{ckpt_prefix}_t{t+1}")
             save_logs(run_dir, episode_returns, episode_end_steps,
-                      omega_history, reward_history, ep_omegas, ep_rewards)
+                      omega_history, reward_history, ep_omegas, ep_rewards,
+                      conv_history, ep_convs)
 
     policy.save(f"{ckpt_prefix}_final")
     save_logs(run_dir, episode_returns, episode_end_steps,
-              omega_history, reward_history, ep_omegas, ep_rewards)
+              omega_history, reward_history, ep_omegas, ep_rewards,
+              conv_history, ep_convs)
 
     total_time = time.time() - total_start
     hours, remainder = divmod(total_time, 3600)

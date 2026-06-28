@@ -166,7 +166,7 @@ class TaylorCouetteMixingEnv(gym.Env):
         powers = []
         times = []
         for result in results:
-             Mz = result["Mz_kin"] * 1000
+             Mz = result["Mz_kin"] * 930   # rho=930 kg/m^3 (silicone oil), not water
              powers.append(Mz * omega_rad)
              times.append(result["t"])
         E = -np.trapezoid(powers, times) # Energy consumption of this time step

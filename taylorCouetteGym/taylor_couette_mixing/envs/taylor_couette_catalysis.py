@@ -43,6 +43,7 @@ read that field as conversion for this env.
 import os
 
 import numpy as np
+from gymnasium import spaces
 
 from taylor_couette_mixing.envs.taylor_couette_mixing import TaylorCouetteMixingEnv
 from taylor_couette_mixing import motor_power
@@ -60,6 +61,10 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         energy_model="motor",
         ramp_time=0.05,
         warmup_omega_rpm=500.0,
+        feed_velocity=0.001462,
+        azimuthal_fraction=5.0 / 360.0,
+        time_step=1.0,
+        clock_in_obs=False,
         **kwargs,
     ):
         # Each episode starts from the warmed initial condition, where the wall
@@ -78,6 +83,20 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
             warmup_omega_rpm=warmup_omega_rpm,
             **kwargs,
         )
+        # Control granularity: override the base 1 s step (the freeform agent uses a
+        # SHORTER step to paint a fine omega(t)). Set BEFORE motor_e_norm uses it.
+        self.time_step = float(time_step)
+        # Optional clock in the obs (phase = step_count/max_steps in [0,1]). A
+        # deterministic TD3 policy collapses to a CONSTANT at steady state (same
+        # state -> same omega); the phase lets it output a TIME-VARYING omega(phase)
+        # -- a learned free-form waveform -- while still using conv/wallFlux/energy.
+        self.clock_in_obs = bool(clock_in_obs)
+        # A field dir must be written at EVERY step boundary (the env continues from
+        # the latest written time). writeInterval == time_step: omega mode is 1==1;
+        # freeform's 0.5 s step needs writeInterval 0.5 or pimpleFoam writes nothing
+        # at 0.5, 1.5, ... and the env "does not advance". (Warmup already ran above
+        # at the make_case writeInterval=1, which is fine as long as warmup >= 1 s.)
+        self.helpers.set_write_interval(self.time_step)
         # Reuse the parent's reward-weight attributes: alpha now weights
         # CONVERSION (maximized), beta weights energy (penalized).
         self.alpha = conv_weight
@@ -115,6 +134,32 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # Conversion (carried in the mixing_index slot) starts ~0, not 1.
         self.I_current = 0.0
 
+        # ---- wallFlux reward normalizer -------------------------------------
+        # The reward is driven by wallFlux (catalytic-wall consumption rate,
+        # m^3/s per unit c0), which responds on the boundary-layer timescale
+        # (seconds) instead of lagging by the ~residence time the way the outlet
+        # conversion does. A steady-state mass balance gives
+        #     wallFlux = Q * c0 * conversion,
+        # so dividing by the feed rate Q*c0 turns wallFlux into a transport-limited
+        # "conversion-equivalent" in ~[0, 1] -- the same scale as conv, so
+        # conv_weight / energy_weight keep their meaning. conv is still recorded.
+        #   Q*c0 = inlet axial velocity * inlet annular area * c0(=1).
+        # r_in/r_out arrive in mm; azimuthal_fraction is the wedge slice (5/360),
+        # set 1.0 for the full 360 annulus. MUST be recomputed if the geometry or
+        # flow rate changes (it auto-tracks r_in/r_out/feed_velocity).
+        r_in_m = float(kwargs.get("r_in", 25.4)) * 1e-3
+        r_out_m = float(kwargs.get("r_out", 31.75)) * 1e-3
+        inlet_area = azimuthal_fraction * np.pi * (r_out_m ** 2 - r_in_m ** 2)
+        self.wallflux_ref = (feed_velocity * inlet_area) or 1.0
+        self.wf_norm = 0.0   # latest wall-flux reward metric (state + logging)
+        # Expose wf_norm in the observation so the policy SEES the quantity it is
+        # rewarded on (un-lagged), not just the residence-time-lagged conversion.
+        self.observation_space.spaces["wf_norm"] = spaces.Box(
+            low=0.0, high=10.0, shape=(1,), dtype=np.float64)
+        if self.clock_in_obs:
+            self.observation_space.spaces["phase"] = spaces.Box(
+                low=0.0, high=1.0, shape=(1,), dtype=np.float64)
+
     def _motor_energy_step(self, prev_rad, new_rad):
         """Electric energy [J] for this 1 s step, from the motor model evaluated on
         the ramp-and-hold omega(t) the env actually commands. Includes the inertial
@@ -133,6 +178,16 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # that slot holds conversion, which starts near 0.
         self.I_current = 0.0
         return self._get_obs(), self._get_info()
+
+    def _get_obs(self):
+        # Base obs (omega, conversion-in-mixing_index, energy) plus the wall-flux
+        # reward metric, so the agent's state includes the signal it optimizes.
+        obs = super()._get_obs()
+        obs["wf_norm"] = self.wf_norm
+        if self.clock_in_obs:
+            # phase in [0,1] = where we are in the episode; lets the policy be time-varying.
+            obs["phase"] = self.step_count / max(self.max_steps, 1)
+        return obs
 
     def step(self, action):
         # Wall speed at the end of the previous step (= what the BC is set to now),
@@ -170,21 +225,28 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
             # Viscous-drag work from the CFD: integral of power = rho * Mz_kin * omega.
             powers, times = [], []
             for result in results:
-                Mz = result["Mz_kin"] * 1000       # kinematic torque -> torque (rho=1000)
+                Mz = result["Mz_kin"] * 930        # kinematic torque -> torque (rho=930, silicone oil)
                 powers.append(Mz * omega_rad)
                 times.append(result["t"])
             E = -np.trapezoid(powers, times)
             E_norm = E / self.E_max_per_step
 
-        # Conversion at the outlet at the end of this 1 s step.
+        # Conversion at the outlet at the end of this 1 s step. RECORDED for
+        # logging/comparison, but it lags the control by ~the residence time.
         conv = float(results[-1]["conv"])
+        # Reward is driven by the wall-consumption rate instead: it responds on
+        # the boundary-layer timescale (seconds), so the agent gets an un-lagged
+        # gradient. Normalized to a conversion-equivalent (~[0,1]); averaged over
+        # the step's sub-results for a smoother signal.
+        wf_norm = float(np.mean([r["wallFlux"] for r in results])) / self.wallflux_ref
 
         terminated = False
         truncated = (self.step_count >= self.max_steps)
-        reward = self.alpha * conv - self.beta * E_norm
+        reward = self.alpha * wf_norm - self.beta * E_norm
 
         self.E_current = self.E_current + E
         self.I_current = conv          # conversion carried in the mixing_index slot
+        self.wf_norm = wf_norm         # wall-flux reward metric (for logging)
         self.step_count += 1
 
         # Snapshot the whole episode's time dirs for ParaView before train.py's

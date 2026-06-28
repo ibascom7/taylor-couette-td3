@@ -314,7 +314,9 @@ def main():
     # ---- TD3 agent (optional; skipped for a baselines-only paper reproduction) ----
     td3 = td3s = None
     if args.policy and not args.baselines_only:
-        policy = TD3.TD3(3, env.action_space.shape[0], 1.0)
+        # state_dim must match training: catalysis now exposes wf_norm -> 4-D state.
+        state_dim = obs_to_state(env._get_obs()).shape[0]
+        policy = TD3.TD3(state_dim, env.action_space.shape[0], 1.0)
         policy.load(args.policy)
         print(f"[compare] loaded policy {args.policy}")
         print("=== td3 agent ===")

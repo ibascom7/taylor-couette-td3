@@ -32,7 +32,8 @@ set -euo pipefail
 SEED=0                  # which trained seed to evaluate
 EVAL_SECONDS=60         # 2 modulation periods
 DUTY=0.2; PERIOD=30     # paper's best pulsating setting (Fig. 6: D~20% wins)
-SCALAR_D=1e-8
+SCALAR_D=1e-9           # MUST match the training slurm's SCALAR_D (env flags must match);
+                        # 1e-9 un-saturates conversion vs the old 1e-8 (see training slurm note)
 # Speed sweeps (rpm). Pulsating peak = mean/DUTY, so keep PULS_RPM means <= ~500
 # (peak <= 2500, the validated range). CONST_RPM should bracket the pulsating
 # conversions so the equal-conversion interpolation stays in range.
@@ -44,7 +45,7 @@ MEAN_RPM=500            # scalar omega make_case seeds (env overrides it)
 # env params -- MUST match training (see run_carya_train_catalysis_td3.slurm)
 R_IN=25.4; R_OUT=31.75
 E_MAX_PER_STEP=0.0011017031875434
-WARMUP_DURATION=20; WARMUP_OMEGA_RPM=500; OMEGA_MAX=2500
+WARMUP_DURATION=100; WARMUP_OMEGA_RPM=500; OMEGA_MAX=2500  # warmup MUST match training (100/500)
 
 OPENFOAM_MODULE="OpenFOAM/v2506-foss-2025b"
 set +u; module purge; module load "$OPENFOAM_MODULE"; source "$FOAM_BASH"; set -u
@@ -60,7 +61,10 @@ MAKE_CASE="experiments/oscillation_vs_constant/make_case.py"
 # Fig 7 / Fig 11 reproduction -- with no TD3 agent (e.g. before any policy exists):
 #     BASELINES_ONLY=1 sbatch experiments/catalysis_rl/run_carya_compare_catalysis.slurm
 BASELINES_ONLY=${BASELINES_ONLY:-0}
-POLICY_DIR="$EXP_DIR/results/td3/catalysis_s${SEED}"
+# Training tags runs catalysis_<control_mode>_s<seed>; the omega mode is the one
+# compare can evaluate (action_dim=1). (Waveform policies are action_dim=3 -> not
+# loadable here; evaluate those via run_carya_cma_waveform.slurm / a waveform eval.)
+POLICY_DIR="$EXP_DIR/results/td3/catalysis_omega_s${SEED}"
 POLICY="$POLICY_DIR/td3_tc_final"
 POLICY_ARGS="--baselines-only"
 if [ "$BASELINES_ONLY" = "1" ]; then

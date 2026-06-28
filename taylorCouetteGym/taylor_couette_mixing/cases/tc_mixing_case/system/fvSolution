@@ -61,7 +61,11 @@ solvers
 
 PIMPLE
 {
-    nOuterCorrectors    2;
+    // 2 -> 1 outer corrector (PISO-like): ~2x faster per step (measured
+    // 135 -> ~49 s wall/sim-second). Safe for this smooth laminar TC flow at
+    // Co <= 1.5; momentum-pressure coupling is solved once per step. If a
+    // converged conversion ever looks off, revert to 2 to check the coupling.
+    nOuterCorrectors    1;
     nCorrectors         1;
     nNonOrthogonalCorrectors 0;
 
