@@ -1,0 +1,26 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  4.x                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Silicone oil (Lopez-Guajardo et al., CEJ 489 (2024) 151174, sec 2.2):
+// rho=930 kg/m^3, mu=0.01 Pa.s -> nu = mu/rho = 1.075e-5 m^2/s.
+// (Was 1e-6 = water, which put Re_rot ~10.75x too high -> spurious turbulence
+//  and a tiny Courant-limited dt. 1.075e-5 reproduces the paper's Table 2 Re_rot.)
+nu              nu [ 0 2 -1 0 0 0 0 ] 1.075e-05;
+
+transportModel  Newtonian;
+
+// ************************************************************************* //

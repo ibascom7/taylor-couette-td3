@@ -1,0 +1,178 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+
+application     pimpleFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         630;
+
+deltaT          0.0001;
+
+adjustTimeStep  yes;
+
+maxCo           1.5;
+
+maxDeltaT       0.001;
+
+writeControl    adjustableRunTime;
+
+writeInterval   1;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  9;
+
+writeCompression no;
+
+timeFormat      general;
+
+timePrecision   9;
+
+runTimeModifiable no;
+
+functions
+{
+    scalarTransport
+    {
+        type            scalarTransport;
+        libs            ( solverFunctionObjects );
+        field           C;
+        resetOnStartUp  false;
+        schemesField    C;
+        D               1e-09;
+        nCorr           1;
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+    }
+    catalysis
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            catalysis;
+        executeControl  timeStep;
+        executeInterval 20;
+        codeOptions     #{
+            -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
+            -I$(LIB_SRC)/TurbulenceModels/incompressible/lnInclude \
+            -I$(LIB_SRC)/transportModels \
+            -I$(LIB_SRC)/transportModels/incompressible/lnInclude
+        #};
+        codeLibs        #{
+            -lincompressibleTurbulenceModels \
+            -lturbulenceModels \
+            -lincompressibleTransportModels
+        #};
+        codeInclude     #{
+            #include "turbulentTransportModel.H"
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = dynamic_cast<const fvMesh&>(this->mesh());
+            const Time&   runTime = mesh.time();
+
+            const volScalarField& C = mesh.lookupObject<volScalarField>("C");
+            const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+
+            const scalar Dmol = 1e-9;          // species diffusivity (matches scalarTransport)
+            const scalar Rin  = 0.0254;
+            const scalar Rout = 0.03175;
+            const label  nBins = 20;
+            scalarField  binC(nBins, 0.0);
+            scalarField  binVz(nBins, 0.0);
+            scalarField  binW(nBins, 0.0);
+
+            // ---------- bottom outlet: radial bins + cup-mixing conversion ----------
+            const label bottomID = mesh.boundaryMesh().findPatchID("bottom");
+            scalar cupNum = 0.0, cupDen = 0.0;   // flux-weighted (cup-mixing) average C
+            if (bottomID >= 0)
+            {
+                const scalarField& Cb = C.boundaryField()[bottomID];
+                const vectorField& Ub = U.boundaryField()[bottomID];
+                const vectorField& Cf = mesh.Cf().boundaryField()[bottomID];
+                const scalarField  magSf(mag(mesh.Sf().boundaryField()[bottomID]));
+                forAll(Cb, i)
+                {
+                    scalar r = sqrt(sqr(Cf[i].x()) + sqr(Cf[i].y()));
+                    label  b = label((r - Rin) / (Rout - Rin) * nBins);
+                    if (b < 0) b = 0;
+                    if (b >= nBins) b = nBins - 1;
+                    binC[b]  += Cb[i] * magSf[i];
+                    binVz[b] += Ub[i].z() * magSf[i];
+                    binW[b]  += magSf[i];
+                    scalar f = mag(Ub[i].z()) * magSf[i];   // |axial volumetric flux|
+                    cupNum += Cb[i] * f;
+                    cupDen += f;
+                }
+            }
+            reduce(binC,  sumOp<scalarField>());
+            reduce(binVz, sumOp<scalarField>());
+            reduce(binW,  sumOp<scalarField>());
+            reduce(cupNum, sumOp<scalar>());
+            reduce(cupDen, sumOp<scalar>());
+            forAll(binC, b)
+                if (binW[b] > SMALL) { binC[b] /= binW[b]; binVz[b] /= binW[b]; }
+            scalar cupC = (cupDen > SMALL) ? cupNum / cupDen : 0.0;
+            scalar conv = 1.0 - cupC;            // c0 = 1, so conversion = 1 - cup outlet C
+
+            // ---------- catalytic (outer) wall: diffusive consumption flux ----------
+            const label outerID = mesh.boundaryMesh().findPatchID("outer_wall");
+            scalar wallFlux = 0.0;               // mol/s (per unit c0): -D * dC/dn integrated
+            if (outerID >= 0)
+            {
+                const scalarField snGradC(C.boundaryField()[outerID].snGrad());
+                const scalarField magSf(mag(mesh.Sf().boundaryField()[outerID]));
+                forAll(snGradC, i) wallFlux += -Dmol * snGradC[i] * magSf[i];
+            }
+            reduce(wallFlux, sumOp<scalar>());
+
+            // ---------- inner-cylinder torque (for power/energy) ----------
+            const label innerID = mesh.boundaryMesh().findPatchID("inner_wall");
+            const incompressible::turbulenceModel& turb =
+                mesh.lookupObject<incompressible::turbulenceModel>("turbulenceProperties");
+            tmp<volSymmTensorField> tdevReff = turb.devReff();
+            const volSymmTensorField& devReff = tdevReff();
+            vector M(vector::zero);
+            if (innerID >= 0)
+            {
+                const vectorField& Sf  = mesh.Sf().boundaryField()[innerID];
+                const vectorField& Cf  = mesh.Cf().boundaryField()[innerID];
+                const symmTensorField& tauB = devReff.boundaryField()[innerID];
+                forAll(Sf, i) M += (Cf[i] ^ (tauB[i] & Sf[i]));
+            }
+            reduce(M, sumOp<vector>());
+
+            Info<< "METRICS t=" << runTime.value()
+                << " Mz_kin=" << M.z()
+                << " conv=" << conv
+                << " cupC=" << cupC
+                << " wallFlux=" << wallFlux;
+            forAll(binC, b)  Info<< " C"  << b << "=" << binC[b];
+            forAll(binVz, b) Info<< " Vz" << b << "=" << binVz[b];
+            Info<< endl;
+        #};
+    }
+}
+
+
+// ************************************************************************* //

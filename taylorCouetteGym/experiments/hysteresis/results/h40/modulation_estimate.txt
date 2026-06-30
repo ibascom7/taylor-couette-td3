@@ -1,0 +1,7 @@
+Quasi-static modulation-vs-constant estimate (conv vs motor power)
+  max conversion gain : +0.99 percentage points
+  at mean motor power : 0.69 W
+  constant conversion : 0.240
+  modulated conversion: 0.250
+  optimal time-share  : nan% at 40 rpm / nan% at 40 rpm
+  (validate by running a square wave at this mean power: compare_catalysis.py / make_case.py --mode squarewave)
