@@ -35,7 +35,8 @@ set -euo pipefail
 # ---- which sweep to eval (MUST match the training run) ---------------
 CONTROL_MODE=freeform
 SEED=0
-ENERGY_WEIGHTS=(0.1 0.2 0.4 0.8)   # same list as the training array
+ENERGY_WEIGHTS=(0.05 0.06 0.07 0.08 0.09)        # match the training array's ew list (0.10 dropped)
+IC_NAMES=(idle spin)                             # match the training array's two-IC probe
 
 # ---- eval config ----------------------------------------------------
 # EVAL_SECONDS must equal training's MAX_STEPS_PER_EP so the freeform phase clock
@@ -81,7 +82,8 @@ echo "=== baselines (constant + pulsating sweeps), computed once ==="
 
 # ---- 2) per-policy eval, reusing the cached baselines + frames -------
 for EW in "${ENERGY_WEIGHTS[@]}"; do
-  TAG="so_parallel_${CONTROL_MODE}_ew${EW}_s${SEED}"
+ for IC in "${IC_NAMES[@]}"; do                                        # two-IC probe: idle & spin tags
+  TAG="so_parallel_${CONTROL_MODE}_ew${EW}_ic${IC}_s${SEED}"
   POLICY="$TRAIN_RESULTS/$TAG/td3_tc_final"
   if [ ! -f "${POLICY}_actor" ]; then   # timeout fallback: newest td3_tc_t<N>
     POLICY=$(ls -d "$TRAIN_RESULTS/$TAG"/td3_tc_t*_actor 2>/dev/null | sort -V | tail -1 | sed 's/_actor$//' || true)
@@ -96,6 +98,7 @@ for EW in "${ENERGY_WEIGHTS[@]}"; do
   ln -sfn "$(readlink -f "$BASE/frames_squarewave")" "$OUT/frames_squarewave"
   echo "=== compare $TAG  (policy=$POLICY) ==="
   "$PYTHON" "$CMP" --policy "$POLICY" --out "$OUT" "${COMMON[@]}"
+ done
 done
 
 echo "=== done. beats-constant figures -> $OUTROOT/<tag>/fig_power_vs_conversion.png ==="

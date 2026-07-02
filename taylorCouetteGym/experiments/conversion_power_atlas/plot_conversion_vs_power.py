@@ -42,6 +42,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.lines import Line2D
+
+# marker per initial-condition (two-IC probe): idle vs spin, so a bistable ew reads as a
+# same-color circle-low / square-high pair. Unknown IC -> circle.
+IC_MARKER = {"idle": "o", "spin": "s", None: "o"}
 
 # The motor model (Lopez-Guajardo Eqs 18-23). Prefer the package import used by the
 # other experiment scripts; fall back to loading the numpy-only module directly, since
@@ -84,6 +89,17 @@ def _num(x, default, cast=float):
         return default
 
 
+def parse_ic(name):
+    """Pull the two-IC label ('idle'/'spin') out of a tag like '..._icidle_s0'; None if
+    absent (runs from before the two-IC probe)."""
+    n = (name or "").lower()
+    if "icidle" in n:
+        return "idle"
+    if "icspin" in n:
+        return "spin"
+    return None
+
+
 def parse_tag(run_dir):
     """Pull (energy_weight, seed) out of a tag like '..._ew0.2_s0'; None if absent."""
     base = os.path.basename(os.path.normpath(run_dir))
@@ -94,13 +110,22 @@ def parse_tag(run_dir):
             base)
 
 
-def resolve(run_dir):
-    """Find a run dir whether the manifest stored it absolute, relative to the repo
-    root, or relative to CWD (the two-checkout /home vs /project split means stored
-    paths are best kept relative)."""
-    for base in ("", GYM_ROOT, os.getcwd()):
+def resolve(run_dir, extra_bases=()):
+    """Find a run dir whether the manifest stored it absolute, relative to CWD, to the
+    manifest's own directory, or to the repo root (the two-checkout /home vs /project
+    split means stored paths are best kept relative)."""
+    for base in ("", *extra_bases, GYM_ROOT, os.getcwd()):
         cand = run_dir if base == "" else os.path.join(base, run_dir)
         if os.path.isdir(cand):
+            return os.path.abspath(cand)
+    return None
+
+
+def resolve_file(path, extra_bases=()):
+    """Like resolve() but for a file (e.g. a baseline_sweep.npz)."""
+    for base in ("", *extra_bases, GYM_ROOT, os.getcwd()):
+        cand = path if base == "" else os.path.join(base, path)
+        if os.path.isfile(cand):
             return os.path.abspath(cand)
     return None
 
@@ -194,6 +219,10 @@ def add_run(path, run_dir, label, energy_weight, seed, dt, tail_frac, last_n, no
     Only explicitly-passed dt/tail_frac/last_n are stored; blanks let the plot use
     its global defaults."""
     run_dir = os.path.normpath(run_dir)
+    if resolve(run_dir) is None:
+        print(f"  WARNING: '{run_dir}' not found from here -- cataloging anyway, but "
+              f"the plot will SKIP it unless the path is right (it should be relative "
+              f"to this directory, or absolute).")
     ew_tag, sd_tag, base = parse_tag(run_dir)
     ew = energy_weight if energy_weight is not None else ew_tag
     sd = seed if seed is not None else sd_tag
@@ -239,6 +268,29 @@ def load_hysteresis(run_dir):
     return dict(up=up, down=down)
 
 
+def load_baselines(npz_path):
+    """Constant + pulsating conv-vs-power baselines from compare_catalysis.py's
+    baseline_sweep.npz. const_motor/const_conv (and puls_*) are avg motor power [W]
+    vs windowed conversion -- the SAME motor_power basis as the atlas, so directly
+    overlayable. Returns {const:(W,conv), puls:(W,conv)} or None."""
+    if not os.path.exists(npz_path):
+        return None
+    try:
+        z = np.load(npz_path, allow_pickle=True)
+    except Exception:
+        return None
+    out = {}
+    if "const_motor" in z.files and "const_conv" in z.files:
+        cm = np.asarray(z["const_motor"], float)
+        cc = np.asarray(z["const_conv"], float)
+        o = np.argsort(cm)                       # sort by power for a clean line
+        out["const"] = (cm[o], cc[o])
+    if "puls_motor" in z.files and "puls_conv" in z.files:
+        out["puls"] = (np.asarray(z["puls_motor"], float),
+                       np.asarray(z["puls_conv"], float))
+    return out or None
+
+
 # --------------------------------------------------------------------------- #
 # plot / scan
 # --------------------------------------------------------------------------- #
@@ -260,14 +312,17 @@ def _color_fn(pts):
     return color_of, cmap, norm
 
 
-def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis):
+def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis, baselines=None):
     rows = read_manifest(manifest_path)
     if not rows:
         print(f"manifest empty: {manifest_path}\n  add runs with:  --add <run_dir>")
         return
+    # Anchor relative run_dirs to the manifest's own directory too, so a manifest
+    # stays valid no matter which directory the plot is invoked from.
+    manifest_dir = os.path.dirname(os.path.abspath(manifest_path))
     pts = []
     for r in rows:
-        rd = resolve(r["run_dir"])
+        rd = resolve(r["run_dir"], extra_bases=[manifest_dir])
         if rd is None:
             print(f"  skip (dir not found): {r['run_dir']}")
             continue
@@ -282,6 +337,7 @@ def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis):
             continue
         op["label"] = r.get("label") or os.path.basename(rd)
         op["energy_weight"] = _num(r.get("energy_weight"), None)
+        op["ic"] = parse_ic(r["run_dir"]) or parse_ic(op["label"])
         pts.append(op)
     if not pts:
         print("no plottable runs in manifest.")
@@ -289,9 +345,24 @@ def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis):
 
     fig, ax = plt.subplots(figsize=(8.5, 6.5))
 
+    # constant/pulsating baseline backbone (compare_catalysis.py's baseline_sweep.npz)
+    bl = load_baselines(resolve_file(baselines, extra_bases=[manifest_dir])) \
+        if baselines else None
+    if baselines and bl is None:
+        print(f"  baselines overlay skipped (unreadable/absent npz): {baselines}")
+    if bl:
+        if "const" in bl:
+            cm, cc = bl["const"]
+            ax.plot(cm, cc, "-D", color="k", lw=1.8, ms=5, zorder=3,
+                    label="constant $\\omega$ sweep")
+        if "puls" in bl:
+            pm, pc = bl["puls"]
+            ax.plot(pm, pc, "P", color="0.35", ms=9, mec="k", mew=0.5,
+                    ls="none", zorder=3, label="pulsating (squarewave)")
+
     # regime backbone first (behind the RL points)
     for i, hdir in enumerate(hysteresis or []):
-        hd = resolve(hdir)
+        hd = resolve(hdir, extra_bases=[manifest_dir])
         br = load_hysteresis(hd) if hd else None
         if br is None:
             print(f"  hysteresis overlay skipped (no hysteresis_branches.csv): {hdir}")
@@ -314,8 +385,8 @@ def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis):
         c = color_of(p)
         ax.errorbar(p["power_mean"], p["conv_mean"],
                     xerr=p["power_std"], yerr=p["conv_std"],
-                    fmt="o", ms=9, color=c, ecolor=c, elinewidth=1,
-                    capsize=3, mec="k", mew=0.6, zorder=4)
+                    fmt=IC_MARKER.get(p.get("ic"), "o"), ms=9, color=c, ecolor=c,
+                    elinewidth=1, capsize=3, mec="k", mew=0.6, zorder=4)
         ax.annotate(p["label"], (p["power_mean"], p["conv_mean"]),
                     textcoords="offset points", xytext=(7, 4),
                     fontsize=7.5, color="0.15", zorder=5)
@@ -330,8 +401,14 @@ def plot(manifest_path, out, dt, tail_frac, last_n, cloud, hysteresis):
     ax.set_title(f"Conversion vs power -- {len(pts)} successful TD3 run(s)\n"
                  f"converged tail: last {last_n} ep x final {int(tail_frac * 100)}% of steps")
     ax.grid(alpha=0.3)
-    if hysteresis:
-        ax.legend(loc="best", fontsize=8)
+    # legend = baseline/hysteresis auto-labels + a marker key for the two-IC probe
+    handles, labels = ax.get_legend_handles_labels()
+    for k in sorted(ic for ic in {p.get("ic") for p in pts} if ic):
+        handles.append(Line2D([0], [0], marker=IC_MARKER[k], color="0.3", ls="none",
+                              mec="k", mew=0.6, ms=9))
+        labels.append(f"{k} IC")
+    if handles:
+        ax.legend(handles, labels, loc="best", fontsize=8)
     fig.tight_layout()
     out = out or os.path.join(os.path.dirname(manifest_path) or ".",
                               "conversion_vs_power.png")
@@ -380,6 +457,9 @@ def main():
                     help="also draw faint per-step (power, conv) clouds")
     ap.add_argument("--hysteresis", action="append", default=[], metavar="RUN_DIR",
                     help="hysteresis run dir to overlay as regime backbone (repeatable)")
+    ap.add_argument("--baselines", metavar="NPZ", default=None,
+                    help="compare_catalysis.py baseline_sweep.npz to overlay the "
+                         "constant-omega (+pulsating) conv-vs-power backbone")
     # --add metadata
     ap.add_argument("--label")
     ap.add_argument("--energy-weight", type=float)
@@ -399,7 +479,8 @@ def main():
     if args.scan:
         scan(args.scan, dt, tail, last_n)
         return
-    plot(args.manifest, args.out, dt, tail, last_n, args.cloud, args.hysteresis)
+    plot(args.manifest, args.out, dt, tail, last_n, args.cloud, args.hysteresis,
+         baselines=args.baselines)
 
 
 if __name__ == "__main__":

@@ -49,6 +49,10 @@ python plot_conversion_vs_power.py
 # add the regime backbone (bistable band = gap between up/down) + per-step clouds:
 python plot_conversion_vs_power.py --hysteresis ../hysteresis/results/h90 --cloud
 
+# overlay the CONSTANT-omega (+pulsating) backbone from the compare job's baseline sweep
+# (a TD3 point above/left of the constant curve == beats constant at equal conversion):
+python plot_conversion_vs_power.py --baselines ../parallelized_catalysis_rl/results/comparison/_baselines/baseline_sweep.npz
+
 # preview candidate runs under a results tree WITHOUT cataloging them:
 python plot_conversion_vs_power.py --scan ../../results/td3
 ```
@@ -74,3 +78,10 @@ version-controlled.
 - `--hysteresis`: the up/down branches bracket the **bistable band**. TD3 points that
   land *above the up-branch* (more conversion than a constant sweep reaches at that
   power) are the payoff — modulation exploiting the regime transition.
+- `--baselines`: the constant-omega curve (black diamonds) + pulsating points (grey) from
+  the compare job's `baseline_sweep.npz`. A TD3 point sitting **above/left** of the
+  constant curve beats constant at equal conversion (lower power for the same conversion).
+- **Two-IC probe:** runs tagged `_icidle_` vs `_icspin_` are drawn as **circles vs
+  squares** at the same `energy_weight` color. A bistable ew shows as a **same-color
+  circle-low / square-high pair** that splits across the plane (idle stays idle, spin
+  stays spinning); a non-bistable ew has the circle and square land together.
