@@ -141,7 +141,8 @@ def _pad_to_grid(episodes):
 
 def save_logs(run_dir, episode_returns, episode_end_steps,
               omega_history, reward_history, ep_omegas, ep_rewards,
-              conv_history=None, ep_convs=None):
+              conv_history=None, ep_convs=None,
+              power_history=None, ep_powers=None):
     """Persist all per-run logs read by plot_comparison.py / DDPG_eval.py.
 
       - episode_returns.npy:   total return of each completed episode
@@ -153,6 +154,9 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
                                the reward is driven by wallFlux, but conversion is
                                recorded here so each episode's end-of-step / mean
                                conversion is available for the paper comparison)
+      - power_per_step.npy:    step-average electrical power [W], [episode, step]
+                               (catalysis env, motor model). Lets a run be placed on
+                               the conversion-vs-power plane without re-simulating.
     The in-progress episode is included in the per-step grids so periodic saves
     capture the latest steps.
     """
@@ -165,6 +169,9 @@ def save_logs(run_dir, episode_returns, episode_end_steps,
     if conv_history is not None:
         conv_grid = _pad_to_grid(conv_history + ([ep_convs] if ep_convs else []))
         np.save(os.path.join(run_dir, "conv_per_step.npy"), conv_grid)
+    if power_history is not None:
+        power_grid = _pad_to_grid(power_history + ([ep_powers] if ep_powers else []))
+        np.save(os.path.join(run_dir, "power_per_step.npy"), power_grid)
 
 
 if __name__ == "__main__":
@@ -462,9 +469,11 @@ if __name__ == "__main__":
     omega_history = []   # completed episodes' chosen omega (rpm) per step
     reward_history = []  # completed episodes' reward per step
     conv_history = []    # completed episodes' conversion per step (mixing_index slot)
+    power_history = []   # completed episodes' step-average power (W); catalysis env
     ep_omegas = []       # current (in-progress) episode
     ep_rewards = []
     ep_convs = []
+    ep_powers = []
 
     total_start = time.time()
 
@@ -495,6 +504,7 @@ if __name__ == "__main__":
         ep_omegas.append(float(next_obs["omega"]))
         ep_rewards.append(float(reward))
         ep_convs.append(float(info["mixing_index"]))   # conversion (catalysis env)
+        ep_powers.append(float(info.get("power_watt", np.nan)))  # W; nan for non-catalysis envs
 
         if t >= start_timesteps:
             policy.train(replay_buffer, batch_size)
@@ -512,6 +522,7 @@ if __name__ == "__main__":
             omega_history.append(ep_omegas)
             reward_history.append(ep_rewards)
             conv_history.append(ep_convs)
+            power_history.append(ep_powers)
             print(
                 f"--- episode {episode_num} done. "
                 f"return={episode_reward:.3f} len={episode_timesteps} ---"
@@ -524,17 +535,18 @@ if __name__ == "__main__":
             ep_omegas = []
             ep_rewards = []
             ep_convs = []
+            ep_powers = []
 
         if (t + 1) % save_every == 0:
             policy.save(f"{ckpt_prefix}_t{t+1}")
             save_logs(run_dir, episode_returns, episode_end_steps,
                       omega_history, reward_history, ep_omegas, ep_rewards,
-                      conv_history, ep_convs)
+                      conv_history, ep_convs, power_history, ep_powers)
 
     policy.save(f"{ckpt_prefix}_final")
     save_logs(run_dir, episode_returns, episode_end_steps,
               omega_history, reward_history, ep_omegas, ep_rewards,
-              conv_history, ep_convs)
+              conv_history, ep_convs, power_history, ep_powers)
 
     total_time = time.time() - total_start
     hours, remainder = divmod(total_time, 3600)

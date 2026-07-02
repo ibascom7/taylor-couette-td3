@@ -143,6 +143,9 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
                                 else self.E_max_per_step)
         # Conversion (carried in the mixing_index slot) starts ~0, not 1.
         self.I_current = 0.0
+        # This step's input energy [J] (motor model; <0 on braking/regen). Surfaced
+        # in info as energy_step / power_watt so training logs power_per_step.npy.
+        self.E_step = 0.0
 
         # ---- wallFlux reward normalizer (dimensionless wall-flux index) ------
         # The reward is driven by wallFlux (catalytic-wall consumption rate, m^3/s
@@ -196,6 +199,7 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # Parent resets the mixing_index slot to 1.0 ("unmixed"); for catalysis
         # that slot holds conversion, which starts near 0.
         self.I_current = 0.0
+        self.E_step = 0.0            # no energy spent yet this episode
         return self._get_obs(), self._get_info()
 
     def _get_obs(self):
@@ -207,6 +211,18 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
             # phase in [0,1] = where we are in the episode; lets the policy be time-varying.
             obs["phase"] = self.step_count / max(self.max_steps, 1)
         return obs
+
+    def _get_info(self):
+        # Parent gives step_count, mixing_index (=conversion), energy_consumption
+        # (CUMULATIVE J). Add the PER-STEP energy/power so training can write a
+        # power_per_step.npy: energy_step is this step's electric energy [J] (motor
+        # model, <0 on regen); power_watt = energy_step / time_step is the step-average
+        # electrical power [W] -- same motor_power basis as plot_conversion_vs_power.py.
+        info = super()._get_info()
+        info["energy_step"] = self.E_step
+        info["power_watt"] = self.E_step / self.time_step
+        info["wf_norm"] = self.wf_norm
+        return info
 
     def step(self, action):
         # Wall speed at the end of the previous step (= what the BC is set to now),
@@ -263,6 +279,7 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         truncated = (self.step_count >= self.max_steps)
         reward = self.alpha * wf_norm - self.beta * E_norm
 
+        self.E_step = E                # this step's input energy [J] (for info/logging)
         self.E_current = self.E_current + E
         self.I_current = conv          # conversion carried in the mixing_index slot
         self.wf_norm = wf_norm         # wall-flux reward metric (for logging)

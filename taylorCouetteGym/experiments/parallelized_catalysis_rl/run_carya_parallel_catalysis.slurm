@@ -31,8 +31,11 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 48                     # whole Compute node PER TASK: 44 workers + headroom for learner/OS
-#SBATCH --mem=120G                # node has 189 GB; 44 small solvers use ~15-25 GB, rest is margin
-#SBATCH -t 12:0:0                 # warmup (~10 min) + 44x-faster collection; ckpts guard timeout
+#SBATCH --mem=16G                 # MEASURED: 44 side-outlet solvers peak ~1.9 GB (jobs 7597281/301);
+                                  #           16G is ~8x margin. (was 120G -- 60x over-request, wasteful.)
+#SBATCH -t 5:0:0                  # MEASURED: array tasks (Lopez laminar params, 44 workers) ran ~2.3 h
+                                  #           (jobs 7597281/301); 5 h is ~2.2x margin. Shorter than 12 h lets
+                                  #           Slurm backfill slot it sooner; ckpts (SAVE_EVERY) guard any overrun.
 #SBATCH --array=0-3               # 4 energy_weights x 1 seed = 4 tasks (one node each)
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com

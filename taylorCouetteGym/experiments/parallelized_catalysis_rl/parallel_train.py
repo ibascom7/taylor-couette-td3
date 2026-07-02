@@ -90,6 +90,7 @@ class Shared:
         self.omega_history = []
         self.reward_history = []
         self.conv_history = []
+        self.power_history = []               # step-average power (W) per episode
 
 
 # --------------------------------------------------------------------------- #
@@ -201,7 +202,7 @@ def collector_loop(wid, env, policy, buffer, obs_to_state, cfg, shared, stop_eve
                 continue
             first = False
             state = obs_to_state(obs)
-            ep_ret, ep_om, ep_rw, ep_cv = 0.0, [], [], []
+            ep_ret, ep_om, ep_rw, ep_cv, ep_pw = 0.0, [], [], [], []
 
             while not stop_event.is_set():
                 with shared.lock:
@@ -239,6 +240,7 @@ def collector_loop(wid, env, policy, buffer, obs_to_state, cfg, shared, stop_eve
                 ep_om.append(float(next_obs["omega"]))
                 ep_rw.append(float(reward))
                 ep_cv.append(float(info["mixing_index"]))  # conversion (catalysis)
+                ep_pw.append(float(info.get("power_watt", np.nan)))  # step-avg power (W)
 
                 if terminated or truncated:
                     with shared.lock:
@@ -247,6 +249,7 @@ def collector_loop(wid, env, policy, buffer, obs_to_state, cfg, shared, stop_eve
                         shared.omega_history.append(ep_om)
                         shared.reward_history.append(ep_rw)
                         shared.conv_history.append(ep_cv)
+                        shared.power_history.append(ep_pw)
                         n_done = len(shared.episode_returns)
                         if cfg["max_episodes"] and n_done >= cfg["max_episodes"]:
                             stop_event.set()   # target episode count reached
@@ -281,7 +284,9 @@ def _snapshot_logs(run_dir, shared):
                 [list(e) for e in shared.omega_history],
                 [list(e) for e in shared.reward_history])
         conv = [list(e) for e in shared.conv_history]
-    save_logs(run_dir, *args, [], [], conv_history=conv, ep_convs=[])
+        power = [list(e) for e in shared.power_history]
+    save_logs(run_dir, *args, [], [], conv_history=conv, ep_convs=[],
+              power_history=power, ep_powers=[])
 
 
 def learner_loop(policy, buffer, cfg, shared, stop_event, run_dir, ckpt_prefix):
