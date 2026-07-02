@@ -51,6 +51,7 @@ if GYM_ROOT not in sys.path:
     sys.path.insert(0, GYM_ROOT)
 
 import TD3
+from train import make_obs_to_state   # THE authoritative adapter (wf_norm + phase)
 from taylor_couette_mixing.envs.taylor_couette_catalysis import (
     TaylorCouetteCatalysisEnv,
 )
@@ -60,20 +61,9 @@ RPM = 2.0 * np.pi / 60.0
 C_CONST, C_PULS, C_TD3 = "#1f77b4", "#d62728", "#2ca02c"
 
 
-# --------------------------------------------------------------------------- #
-# state adapter (identical to train.py; conversion sits in the mixing slot)
-# --------------------------------------------------------------------------- #
-def make_obs_to_state(omega_max, energy_norm):
-    def obs_to_state(obs):
-        return np.array(
-            [
-                float(obs["omega"]) / omega_max,
-                2.0 * float(obs["mixing_index"]) - 1.0,    # = 2*conversion - 1
-                float(obs["energy_consumption"]) / energy_norm,
-            ],
-            dtype=np.float32,
-        )
-    return obs_to_state
+# The obs->state adapter is imported from train.py so eval matches training EXACTLY:
+# it appends wf_norm (catalysis) and, for a freeform policy, the episode phase clock.
+# (Using a stale local copy is how a freeform checkpoint silently dimension-mismatches.)
 
 
 def omega_to_action(omega_rpm, omega_min, omega_max):
@@ -209,10 +199,20 @@ def main():
     ap.add_argument("--refresh-baselines", action="store_true",
                     help="recompute the baseline sweeps even if a valid cache exists")
     # env params -- MUST match training.
+    ap.add_argument("--control_mode", choices=["omega", "freeform"], default="omega",
+                    help="MATCH training. 'freeform' policies carry an episode phase "
+                         "clock in the state (state_dim 5), so the env is built with "
+                         "clock_in_obs=True to reproduce the learned waveform; a plain "
+                         "'omega' policy is state_dim 4 (no clock).")
     ap.add_argument("--r_in", type=float, default=25.4)
     ap.add_argument("--r_out", type=float, default=31.75)
+    ap.add_argument("--feed_velocity", type=float, default=1.462e-3,
+                    help="MATCH training (side-outlet 100 mL/min = 1.462e-3): sets the "
+                         "Q*c0 that normalizes wf_norm, which the policy conditions on.")
+    ap.add_argument("--wallflux_max", type=float, default=None,
+                    help="MATCH training (None -> auto Q*c0).")
     ap.add_argument("--e_max_per_step", type=float, default=0.0011017031875434)
-    ap.add_argument("--warmup_duration", type=float, default=20.0)
+    ap.add_argument("--warmup_duration", type=float, default=80.0)
     ap.add_argument("--warmup_omega_rpm", type=float, default=500.0)
     ap.add_argument("--omega_max", type=float, default=2500.0)
     ap.add_argument("--ramp_time", type=float, default=0.05)
@@ -229,8 +229,10 @@ def main():
     env = TaylorCouetteCatalysisEnv(
         case_path=args.case, omega_max=args.omega_max, max_steps=args.eval_seconds,
         r_in=args.r_in, r_out=args.r_out, E_max_per_step=args.e_max_per_step,
+        feed_velocity=args.feed_velocity, wallflux_max=args.wallflux_max,
         warmup_duration=args.warmup_duration, warmup_omega_rpm=args.warmup_omega_rpm,
         ramp_time=args.ramp_time,
+        clock_in_obs=(args.control_mode == "freeform"),   # phase clock for freeform eval
     )
     # Match training's energy-obs normalizer (motor scale, not the mechanical
     # E_max_per_step) so the policy sees the same state scaling it trained on.
@@ -314,7 +316,9 @@ def main():
     # ---- TD3 agent (optional; skipped for a baselines-only paper reproduction) ----
     td3 = td3s = None
     if args.policy and not args.baselines_only:
-        # state_dim must match training: catalysis now exposes wf_norm -> 4-D state.
+        # state_dim is read off the env's own obs via the train adapter: 4-D for a
+        # plain 'omega' policy (+wf_norm), 5-D for 'freeform' (+phase). Must equal
+        # what the checkpoint trained with, else policy.load() size-mismatches.
         state_dim = obs_to_state(env._get_obs()).shape[0]
         policy = TD3.TD3(state_dim, env.action_space.shape[0], 1.0)
         policy.load(args.policy)

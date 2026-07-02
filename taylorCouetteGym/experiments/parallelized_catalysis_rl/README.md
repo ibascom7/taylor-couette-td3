@@ -98,14 +98,24 @@ per wall-clock second.
   gradient steps to collected transitions. Reuses `ReplayBuffer`,
   `make_obs_to_state`, `make_policy`, `save_logs`, `TD3` from the top-level
   `train.py`, so state/obs/logging/checkpoints stay identical to serial runs.
-- `run_carya_parallel_catalysis.slurm` — one job, `-c 18` (16 workers + learner
-  headroom), points at the pre-configured `side_outlet_cat_case`.
+- `run_carya_parallel_catalysis.slurm` — a job ARRAY over `energy_weight`
+  ({0.1,0.2,0.4,0.8}, 1 seed = 4 tasks; a locating sweep), each task a full 48-core
+  node (`-c 48`, 44 workers) running the same 500-episode config at a different reward
+  knob. Multi-seed the winning weight afterward. Points at `side_outlet_cat_case`.
+- `run_carya_compare.slurm` — EVAL: drives `experiments/catalysis_rl/compare_catalysis.py`
+  on each swept policy vs the constant/pulsating baselines → the beats-constant figure
+  (`fig_power_vs_conversion.png`) + `summary.txt` verdict per tag. Serial (small 1-node
+  job); computes the baselines ONCE and reuses them for all 6 policies. Run after training.
 
 ## Usage
 
 ```bash
-# Carya (16 workers):
+# 1. Train: energy_weight sweep (4 nodes, 44 workers each, 500 episodes/120 s):
 sbatch experiments/parallelized_catalysis_rl/run_carya_parallel_catalysis.slurm
+
+# 2. Eval (after training): beats-constant figure per swept policy:
+sbatch experiments/parallelized_catalysis_rl/run_carya_compare.slurm
+#    then: grep -H 'vs constant at equal conversion' results/comparison/*/summary.txt
 
 # Local smoke test (2 workers, 3 s warmup, tiny budget -- validates the whole path):
 python experiments/parallelized_catalysis_rl/parallel_train.py --smoke \
@@ -118,8 +128,9 @@ thread stacks every 20 s (hang diagnosis).
 
 ## Design choices made
 
-1. **K (worker count):** `--n_workers 16` (= cores). Threaded, so pimpleFoam runs
-   truly concurrently.
+1. **K (worker count):** `--n_workers 44` on a full 48-core Compute node (leave ~4
+   for learner/OS). Threaded + single-node; to use more nodes, run a job ARRAY
+   (independent runs, e.g. one energy_weight per node), not one pooled learner.
 2. **Async collection** (no sync barrier): each worker loops independently, so a
    cheap idle-omega step never waits on a slow 2500 rpm step in another worker.
 3. **Gradient ratio** `--grad_per_step` (default 1.0 = serial-equivalent): the

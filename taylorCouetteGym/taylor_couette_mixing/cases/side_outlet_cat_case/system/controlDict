@@ -53,7 +53,7 @@ functions
         field           C;
         resetOnStartUp  false;
         schemesField    C;
-        D               2.8e-8;     // must match transportProperties.D below
+        D               1e-9;       // must match transportProperties.D below
         nCorr           1;
         executeControl  timeStep;
         executeInterval 1;

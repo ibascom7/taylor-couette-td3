@@ -247,7 +247,10 @@ def collector_loop(wid, env, policy, buffer, obs_to_state, cfg, shared, stop_eve
                         shared.omega_history.append(ep_om)
                         shared.reward_history.append(ep_rw)
                         shared.conv_history.append(ep_cv)
-                    print(f"[w{wid:02d}] ep done ret={ep_ret:+.3f} "
+                        n_done = len(shared.episode_returns)
+                        if cfg["max_episodes"] and n_done >= cfg["max_episodes"]:
+                            stop_event.set()   # target episode count reached
+                    print(f"[w{wid:02d}] ep {n_done} done ret={ep_ret:+.3f} "
                           f"convmean={np.mean(ep_cv):.3f} steps={gstep}/{cfg['max_timesteps']}",
                           flush=True)
                     break
@@ -333,7 +336,12 @@ def build_parser():
     p.add_argument("--algo", choices=["td3", "ddpg"], default="td3")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--max_timesteps", type=int, default=6000,
-                   help="TOTAL env steps to collect across ALL workers.")
+                   help="TOTAL env steps to collect across ALL workers (upper safety "
+                        "bound when --max_episodes is set).")
+    p.add_argument("--max_episodes", type=int, default=None,
+                   help="stop once this many episodes have COMPLETED (across all workers). "
+                        "The primary stop when set; workers still in an episode at that "
+                        "moment truncate, so you get ~this many completed episodes exactly.")
     p.add_argument("--start_timesteps", type=int, default=600,
                    help="random-action steps (total) before the policy + learning kick in.")
     p.add_argument("--grad_per_step", type=float, default=1.0,
@@ -352,12 +360,13 @@ def build_parser():
                    default="freeform")
     p.add_argument("--max_steps_per_ep", type=int, default=60)
     p.add_argument("--freeform_dt", type=float, default=1.0)
-    p.add_argument("--warmup_duration", type=float, default=130.0,
-                   help="one-time spin-up seconds (side-outlet needs ~130 s to fill).")
+    p.add_argument("--warmup_duration", type=float, default=80.0,
+                   help="one-time spin-up seconds. Shortened side-outlet @100 mL/min: "
+                        "residence tau~26 s, so ~3 tau=80 s reaches steady state.")
     p.add_argument("--warmup_omega_rpm", type=float, default=500.0)
     p.add_argument("--r_in", type=float, default=25.4)
     p.add_argument("--r_out", type=float, default=31.75)
-    p.add_argument("--feed_velocity", type=float, default=5.847e-4)
+    p.add_argument("--feed_velocity", type=float, default=1.462e-3)  # Q0=100 mL/min (Lopez)
     p.add_argument("--wallflux_max", type=float, default=None)
     p.add_argument("--e_max_per_step", type=float, default=0.0011017031875434)
     p.add_argument("--conv_weight", type=float, default=1.0)
@@ -448,7 +457,8 @@ def main():
                max_timesteps=args.max_timesteps, expl_noise=args.expl_noise,
                max_action=max_action, action_dim=action_dim,
                batch_size=args.batch_size, grad_per_step=args.grad_per_step,
-               save_every=args.save_every, max_fail=args.max_fail)
+               save_every=args.save_every, max_fail=args.max_fail,
+               max_episodes=args.max_episodes)
     shared.live_workers = args.n_workers
 
     threads = [

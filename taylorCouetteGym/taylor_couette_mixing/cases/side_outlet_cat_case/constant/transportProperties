@@ -22,7 +22,8 @@ rho             rho [1 -3 0 0 0 0 0] 930;
 mu              mu  [1 -1 -1 0 0 0 0] 0.01;
 nu              nu  [0 2 -1 0 0 0 0] 1.0752688172043011e-05;
 
-// Diluted-species diffusivity inferred from Sc ~ 1e5 reported in the paper.
-D               D   [0 2 -1 0 0 0 0] 2.8e-8;
+// Diluted-species diffusivity D = 1e-9 m2/s (Lopez-Guajardo, corrected 2026-07;
+// Sc = nu/D ~= 1e4). Must match the scalarTransport D in system/controlDict.
+D               D   [0 2 -1 0 0 0 0] 1e-9;
 
 // ************************************************************************* //

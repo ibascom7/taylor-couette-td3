@@ -66,7 +66,7 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         energy_model="motor",
         ramp_time=0.05,
         warmup_omega_rpm=500.0,
-        feed_velocity=5.847e-4,   # side-outlet: Umean = Q0(40 mL/min)/annulus area
+        feed_velocity=1.462e-3,   # side-outlet: Umean = Q0(100 mL/min)/annulus area
         azimuthal_fraction=5.0 / 360.0,
         wallflux_max=None,        # None -> auto = Q*c0 (100%-conversion feed ceiling)
         time_step=1.0,
@@ -163,7 +163,7 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # wf_index = wallFlux/(Q*c0) is exactly the conversion-equivalent in [0,1].
         # Q*c0 = inlet velocity * inlet annular area * c0(=1); r_in/r_out in mm;
         # azimuthal_fraction is the wedge slice (5/360; 1.0 for full 360). Defaults
-        # are the side-outlet case -> Q*c0 = 9.26e-9 m^3/s (Q0=40 mL/min). A wedge
+        # are the side-outlet case -> Q*c0 = 2.315e-8 m^3/s (Q0=100 mL/min). A wedge
         # user must pass feed_velocity/r_in/r_out for their geometry.
         r_in_m = float(kwargs.get("r_in", 25.4)) * 1e-3
         r_out_m = float(kwargs.get("r_out", 31.75)) * 1e-3

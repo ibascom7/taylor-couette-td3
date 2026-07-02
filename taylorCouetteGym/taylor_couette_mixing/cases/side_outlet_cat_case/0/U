@@ -60,7 +60,7 @@ boundaryField
 
             const scalar Ri = 0.0254;
             const scalar Ro = 0.03175;
-            const scalar Q0 = 40e-6/60.0;   // full 360-degree flow rate [m3/s]
+            const scalar Q0 = 100e-6/60.0;  // full 360-deg flow rate [m3/s] (Lopez: 100 mL/min)
             const scalar pi = 3.1415926535897932384626433832795;
 
             const scalar Aann = pi*(sqr(Ro) - sqr(Ri));
