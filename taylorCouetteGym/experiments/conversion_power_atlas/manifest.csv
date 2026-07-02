@@ -1,0 +1,6 @@
+run_dir,label,energy_weight,seed,dt,tail_frac,last_n,notes
+../parallelized_catalysis_rl/results/td3/so_parallel_freeform_ew0.1_s0,so_parallel_freeform_ew0.1_s0,0.1,0,,,,
+../parallelized_catalysis_rl/results/td3/so_parallel_freeform_ew0.2_s0,so_parallel_freeform_ew0.2_s0,0.2,0,,,,
+../parallelized_catalysis_rl/results/td3/so_parallel_freeform_ew0.4_s0,so_parallel_freeform_ew0.4_s0,0.4,0,,,,
+../parallelized_catalysis_rl/results/td3/so_parallel_freeform_ew0.8_s0,so_parallel_freeform_ew0.8_s0,0.8,0,,,,
+../parallelized_catalysis_rl/results/td3/so_parallel_freeform_s0,job7596936 (16-worker),0.1,0,,,,
