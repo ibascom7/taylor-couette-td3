@@ -193,10 +193,19 @@ if __name__ == "__main__":
     parser.add_argument("--r_out", type=float, default=31.75,
                         help="Outer cylinder radius (mm) of the case geometry. "
                              "Wedge tc_mixing_case: 31.75. Full 3D full_tc_mixing_case: 40.35.")
+    parser.add_argument("--feed_velocity", type=float, default=5.847e-4,
+                        help="[catalysis env] inlet mean velocity (m/s) = Q0/annulus_area; "
+                             "sets the Q*c0 feed-rate ceiling that normalizes wallFlux. "
+                             "Side-outlet (Q0=40 mL/min): 5.847e-4.")
+    parser.add_argument("--wallflux_max", type=float, default=None,
+                        help="[catalysis env] wall-flux normalizer (m^3/s) so "
+                             "wf_index=wallFlux/wallflux_max ~[0,1]. Default None -> auto = "
+                             "Q*c0 (largest reactant convertible per unit time = 100%% "
+                             "conversion). Side-outlet auto value: 9.26e-9.")
     parser.add_argument("--e_max_per_step", type=float, default=0.0011017031875434,
-                        help="Per-step energy normalizer (J) for the reward's energy term. "
-                             "Geometry-specific (full annulus burns far more than the wedge); "
-                             "calibrate per case. Wedge default shown.")
+                        help="[mechanical energy_model only] per-step energy normalizer (J). "
+                             "For energy_model=motor the normalizer is E_max = motor energy "
+                             "for one step at omega_max, computed internally (geometry-free).")
     parser.add_argument("--warmup_duration", type=float, default=10.0,
                         help="Seconds to spin the case up (once, cached as 0.warmed) before "
                              "training, so dye has reached the bottom outlet. Must exceed the "
@@ -362,6 +371,8 @@ if __name__ == "__main__":
                 case_path=args.case_path,
                 r_in=args.r_in,
                 r_out=args.r_out,
+                feed_velocity=args.feed_velocity,
+                wallflux_max=args.wallflux_max,
                 E_max_per_step=args.e_max_per_step,
                 warmup_duration=args.warmup_duration,
                 warmup_omega_rpm=args.warmup_omega_rpm,

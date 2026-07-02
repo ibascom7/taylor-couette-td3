@@ -16,16 +16,21 @@ everything in between, so the agent can DISCOVER a waveform rather than be hande
 one. (The mixing env instead nudges omega by +-50 rpm/step within +-300 rpm,
 which can't reach the catalysis baselines' range.)
 
-Reward (per step):   conv_weight * conversion  -  energy_weight * E_norm
-  conversion = results[-1]["conv"] in [0, 1]    (instantaneous outlet conversion)
-  E_norm     = E_step / E_max_per_step           (per-step input energy; the
-                                                   normalizer is ~1 s @ ~500 rpm,
-                                                   so E_norm ~ 1 at 500 rpm and
-                                                   grows steeply with omega).
-energy_weight is THE knob. Too large -> the agent idles omega->0 (cheap, but low
-conversion); too small -> it pins omega->omega_max (max conversion at max power).
-The paper's "more conversion at less energy" sits at an intermediate value -- tune
-it (start ~0.1 and watch whether the learned omega(t) collapses to a rail).
+Reward (per step):   alpha * wf_index  -  beta * E_index   (alpha=conv_weight,
+                                                             beta=energy_weight)
+  wf_index = wallFlux / wallflux_max  in ~[0, 1]   (catalytic-wall consumption
+             rate at the outer wall, normalized by its steady value at omega_max;
+             this is the DRIVER of the reward -- it responds on the boundary-layer
+             timescale, unlike outlet conversion which lags by the residence time)
+  E_index  = E_step  / E_max          in ~[0, 1]   (per-step input energy over the
+             motor energy for one step at omega_max)
+Both indices share the ~[0,1] scale, so alpha and beta trade off comparable
+quantities (this is the whole point -- before, E_norm was ~1 at the mean speed and
+~5 at omega_max while wf was ~0.01, so the energy term dwarfed the flux term and
+the reward was monotone-decreasing in omega -> idle collapse). energy_weight is
+THE knob: too large -> the agent idles omega->0 (cheap, low conversion); too small
+-> it pins omega->omega_max. Conversion is still recorded (mixing_index slot) for
+reporting.
 
 Case contract. The case MUST already be configured for catalysis: catalytic-wall
 0/C (feed c0=1, outer wall C=0 sink), the `catalysis` coded function object in
@@ -61,8 +66,9 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         energy_model="motor",
         ramp_time=0.05,
         warmup_omega_rpm=500.0,
-        feed_velocity=0.001462,
+        feed_velocity=5.847e-4,   # side-outlet: Umean = Q0(40 mL/min)/annulus area
         azimuthal_fraction=5.0 / 360.0,
+        wallflux_max=None,        # None -> auto = Q*c0 (100%-conversion feed ceiling)
         time_step=1.0,
         clock_in_obs=False,
         **kwargs,
@@ -116,13 +122,17 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         #                   original metric. Convex in omega, so it punishes bursts and
         #                   the agent will avoid modulation. Kept for comparison.
         self.energy_model = energy_model
-        # Per-step energy normalizer so E_norm ~ 1 at the mean speed (keeps the
-        # reward's two terms comparable). Motor: steady motor power at warmup speed
-        # x 1 s (~6 J at 500 rpm); mechanical: the passed-in E_max_per_step.
+        # Per-step energy normalizer = E_max: the motor energy for ONE step at
+        # omega_max (the extreme operating point), so E_index = E_step/E_max lives
+        # in ~[0,1] -- the SAME scale as the wall-flux index below. (Previously
+        # referenced at the warmup/mean speed 500 rpm, which put E_norm ~1 at the
+        # mean and ~5.2 at omega_max, dwarfing wf and making the reward
+        # monotone-decreasing in omega -> idle collapse.) Motor model is a pure
+        # function of omega(t), so E_max is geometry-independent.
         if energy_model == "motor":
             tau = np.linspace(0.0, self.time_step, 200)
-            w_const = np.full_like(tau, (warmup_omega_rpm * 2 * np.pi) / 60)
-            self.motor_e_norm = abs(motor_power.energy(tau, w_const)) or 1.0
+            w_max = np.full_like(tau, (self.omega_max * 2 * np.pi) / 60)
+            self.motor_e_norm = abs(motor_power.energy(tau, w_max)) or 1.0
         # Per-step scale for normalizing the cumulative-energy OBSERVATION to ~O(1)
         # (train.py divides E_current by energy_obs_norm * max_steps). It MUST match
         # the active energy model: a motor Joule (~6 J/step) is ~10^4x the mechanical
@@ -134,24 +144,33 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # Conversion (carried in the mixing_index slot) starts ~0, not 1.
         self.I_current = 0.0
 
-        # ---- wallFlux reward normalizer -------------------------------------
-        # The reward is driven by wallFlux (catalytic-wall consumption rate,
-        # m^3/s per unit c0), which responds on the boundary-layer timescale
-        # (seconds) instead of lagging by the ~residence time the way the outlet
-        # conversion does. A steady-state mass balance gives
-        #     wallFlux = Q * c0 * conversion,
-        # so dividing by the feed rate Q*c0 turns wallFlux into a transport-limited
-        # "conversion-equivalent" in ~[0, 1] -- the same scale as conv, so
-        # conv_weight / energy_weight keep their meaning. conv is still recorded.
-        #   Q*c0 = inlet axial velocity * inlet annular area * c0(=1).
-        # r_in/r_out arrive in mm; azimuthal_fraction is the wedge slice (5/360),
-        # set 1.0 for the full 360 annulus. MUST be recomputed if the geometry or
-        # flow rate changes (it auto-tracks r_in/r_out/feed_velocity).
+        # ---- wallFlux reward normalizer (dimensionless wall-flux index) ------
+        # The reward is driven by wallFlux (catalytic-wall consumption rate, m^3/s
+        # per unit c0), which responds on the boundary-layer timescale (seconds)
+        # instead of lagging by the ~residence time the way the outlet conversion
+        # does. We divide by wallflux_max -- the steady wallFlux at omega_max (the
+        # extreme operating point) -- so wf_index = wallFlux/wallflux_max lives in
+        # ~[0,1], the SAME scale as E_index, and alpha/beta trade off comparable
+        # quantities. wallflux_max is CASE-SPECIFIC and must be MEASURED once from
+        # CFD (run the case at omega_max to steady state; see the probe in
+        # experiments/parallelized_catalysis_rl). Pass it in via wallflux_max.
+        #
+        # Fallback if wallflux_max is None (the DEFAULT, and the recommended
+        # definition): the analytic feed-rate ceiling Q*c0 = the LARGEST amount of
+        # reactant that can be consumed per unit time (100% conversion -- you cannot
+        # consume more than you feed in at steady state). By the mass balance
+        # wallFlux = Q*c0*conversion this upper-bounds the steady wallFlux, so
+        # wf_index = wallFlux/(Q*c0) is exactly the conversion-equivalent in [0,1].
+        # Q*c0 = inlet velocity * inlet annular area * c0(=1); r_in/r_out in mm;
+        # azimuthal_fraction is the wedge slice (5/360; 1.0 for full 360). Defaults
+        # are the side-outlet case -> Q*c0 = 9.26e-9 m^3/s (Q0=40 mL/min). A wedge
+        # user must pass feed_velocity/r_in/r_out for their geometry.
         r_in_m = float(kwargs.get("r_in", 25.4)) * 1e-3
         r_out_m = float(kwargs.get("r_out", 31.75)) * 1e-3
         inlet_area = azimuthal_fraction * np.pi * (r_out_m ** 2 - r_in_m ** 2)
-        self.wallflux_ref = (feed_velocity * inlet_area) or 1.0
-        self.wf_norm = 0.0   # latest wall-flux reward metric (state + logging)
+        self.wallflux_ref = (feed_velocity * inlet_area) or 1.0   # analytic Q*c0 ceiling
+        self.wallflux_max = float(wallflux_max) if wallflux_max else self.wallflux_ref
+        self.wf_norm = 0.0   # latest wall-flux index (state + logging)
         # Expose wf_norm in the observation so the policy SEES the quantity it is
         # rewarded on (un-lagged), not just the residence-time-lagged conversion.
         self.observation_space.spaces["wf_norm"] = spaces.Box(
@@ -238,7 +257,7 @@ class TaylorCouetteCatalysisEnv(TaylorCouetteMixingEnv):
         # the boundary-layer timescale (seconds), so the agent gets an un-lagged
         # gradient. Normalized to a conversion-equivalent (~[0,1]); averaged over
         # the step's sub-results for a smoother signal.
-        wf_norm = float(np.mean([r["wallFlux"] for r in results])) / self.wallflux_ref
+        wf_norm = float(np.mean([r["wallFlux"] for r in results])) / self.wallflux_max
 
         terminated = False
         truncated = (self.step_count >= self.max_steps)

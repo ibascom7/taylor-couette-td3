@@ -1,0 +1,28 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \    /   O peration     | Version:  v2506                                 |
+|   \  /    A nd           | Website:  www.openfoam.com                      |
+|    \/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// Lopez silicone oil: rho = 930 kg/m3, mu = 0.01 Pa s.
+// pimpleFoam uses nu = mu/rho.
+
+transportModel  Newtonian;
+
+rho             rho [1 -3 0 0 0 0 0] 930;
+mu              mu  [1 -1 -1 0 0 0 0] 0.01;
+nu              nu  [0 2 -1 0 0 0 0] 1.0752688172043011e-05;
+
+// Diluted-species diffusivity inferred from Sc ~ 1e5 reported in the paper.
+D               D   [0 2 -1 0 0 0 0] 2.8e-8;
+
+// ************************************************************************* //

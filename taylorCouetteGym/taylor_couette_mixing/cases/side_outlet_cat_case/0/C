@@ -1,0 +1,67 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2506                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      C;
+}
+// Catalysis reactant (same convention as the other cases): fed at c0=1 from the
+// top inlet, consumed at the catalytic OUTER wall (C=0 sink). Conversion at the
+// side outlet = 1 - cup-mixing C. Inner (rotating) wall is inert; closed bottom
+// is no-flux. Dimensionless so it is mesh/scale agnostic.
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 1;          // reactor initially full of feed (c0 = 1)
+
+boundaryField
+{
+    inner_wall
+    {
+        type            zeroGradient;             // inert rotating wall
+    }
+
+    outer_wall
+    {
+        type            fixedValue;               // CATALYTIC wall: fast reaction sink
+        value           uniform 0;
+    }
+
+    bottom
+    {
+        type            zeroGradient;             // closed bottom: no-flux
+    }
+
+    inlet
+    {
+        type            fixedValue;               // reactant feed c0 = 1
+        value           uniform 1;
+    }
+
+    side_outlet
+    {
+        type            inletOutlet;              // outflow; 0 on any backflow
+        inletValue      uniform 0;
+        value           uniform 1;
+    }
+
+    front
+    {
+        type            wedge;
+    }
+
+    back
+    {
+        type            wedge;
+    }
+}
+
+// ************************************************************************* //
