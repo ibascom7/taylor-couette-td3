@@ -22,3 +22,8 @@ __pycache__/
 # NOT under frames/, so it is not matched by these rules.
 results/**/frames/
 taylorCouetteGym/results/**/frames/
+**/frames_constant/
+**/frames_squarewave/
+.venv/
+**/frames*/
+**/paraview/
