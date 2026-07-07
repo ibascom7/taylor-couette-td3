@@ -25,7 +25,7 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 2                      # compare is SERIAL; 2 cores cover pimpleFoam + python
-#SBATCH --mem=16G
+#SBATCH --mem=4G
 #SBATCH -t 12:0:0
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bascomisaiah@gmail.com
@@ -35,7 +35,7 @@ set -euo pipefail
 # ---- which sweep to eval (MUST match the training run) ---------------
 CONTROL_MODE=freeform
 SEED=0
-ENERGY_WEIGHTS=(0.05 0.06 0.07 0.08 0.09)        # match the training array's ew list (0.10 dropped)
+ENERGY_WEIGHTS=(0.01 0.03 0.05 0.07 0.09)        # match the training array's ew list
 IC_NAMES=(idle spin)                             # match the training array's two-IC probe
 
 # ---- eval config ----------------------------------------------------

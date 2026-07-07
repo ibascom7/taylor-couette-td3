@@ -12,11 +12,9 @@
 # (Node-local worker_root re-warms each job, ~10 min; for a cross-job cache point
 # WORKER_ROOT at shared storage.) Pass --rebuild to force a fresh warmup.
 #
-# SWEEP: a job ARRAY over energy_weight x initial-condition -- each task takes a whole
-# node (44 workers). A FINE ew walk in [0.05,0.10] across the idle<->spin crossover, x a
-# TWO-IC probe (idle-warmed vs spun-up flow) to test for a bistable band. On the
-# conversion_power_atlas, compare the idle-IC vs spin-IC tag at each ew: if they DIVERGE
-# (one idle, one spinning) that ew is bistable -- the regime transition we're after.
+# SWEEP: a job ARRAY over energy_weight -- each task takes a whole node (44 workers)
+# and trains one TD3 agent at one ew. The ew grid walks across the idle<->spin
+# crossover (see ENERGY_WEIGHTS below) to locate the interior-optimum window.
 #
 # Reward (side-outlet, dimensionless indices): conv_weight*wf_index - energy_weight*E_index,
 #   wf_index = wallFlux / (Q*c0)         (auto: 2.315e-8 m^3/s, feed-rate ceiling)
@@ -34,11 +32,10 @@
 #SBATCH -c 48                     # whole Compute node PER TASK: 44 workers + headroom for learner/OS
 #SBATCH --mem=4G                  # MEASURED: 44 side-outlet solvers peak ~1.9 GB (jobs 7597281/301);
                                   #           8G is ~4x margin, plenty. (was 120G -- 60x over-request.)
-#SBATCH -t 8:0:0                  # two-IC probe: idle-IC/high-ew tasks ~2 h, but SPIN-IC/low-ew tasks
+#SBATCH -t 8:0:0                  # ~2 h for higher-ew (low-omega) tasks, up to ~6 h for lower-ew tasks that
                                   #           spin to max (~6 h at 150 ep). 8 h covers them; policy converges
                                   #           by ~ep100 so ckpts (SAVE_EVERY) make any overrun a usable policy.
-#SBATCH --array=0-9%5            # 5 energy_weights x 2 ICs (idle/spin) = 10 tasks; %5 => at most 5 nodes
-                                  # run at once (throttle; all 10 still run). Keep = 0-(len(EW)*NIC-1)%N.
+#SBATCH --array=0-4              # one task per energy_weight (5 tasks). Keep = 0-(len(ENERGY_WEIGHTS)-1).
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
 
@@ -49,30 +46,21 @@ ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
 CONTROL_MODE=freeform            # the modulation agent (absolute omega each freeform_dt s + clock)
 
-# ---- SWEEP: energy_weight x initial-condition (TWO-IC bistability probe) ----------
-# The prior {0.1,0.2,0.4,0.8} sweep ALL idle-collapsed under the Lopez laminar params
-# (atlas: ~0.7 W, ~1.5% conv); the idle<->spin crossover is a SHARP bifurcation the old
-# sweep straddled (note then said ew=0.05 spins-to-max, ew=0.10 idles). Re-center FINE:
-ENERGY_WEIGHTS=(0.01 0.03 0.05 0.07 0.09)   # fine walk toward the crossover; ew=0.10 already known
-                                            # to idle (the earlier ew0.1 run), so it's not re-run here.
+# ---- SWEEP: energy_weight (one task per weight) -----------------------------------
+# CORRECTED for the wall-transfer reward (2026-07): with the catalytic-wall mass-
+# transfer model, wf_index now RISES with omega (wallFlux ~ omega^0.78) instead of
+# sitting flat, so the idle<->spin crossover moved up ~30-100x, from ~0.01-0.1 to
+# ~0.7-3.2. This grid spans the interior-optimum window; the best CONSTANT omega*
+# runs ~1200 rpm (ew=0.8) down to ~80 rpm (ew=3.0). ew<~0.6 pegs omega_max, ew>~3.3
+# idles. (Modulation is cheaper than constant under the motor model, so RL should
+# beat these constant-omega rewards and may push the idle boundary higher.)
+ENERGY_WEIGHTS=(0.8 1.3 1.8 2.4 3.0)   # 5 values -> --array=0-4
+SEED=0
 #
-# TWO-IC PROBE: run each ew from two flow ICs -- an IDLE-warmed field vs a SPUN-UP
-# (Taylor-vortex) field. Each episode HARD-RESETS to its cached warmed IC, so the IC
-# genuinely persists as the probe. If at some ew the idle-IC stays idle while the spin-IC
-# stays spinning, that ew is a BISTABLE point (same reward knob, two stable flow regimes);
-# if both converge alike, no bistability there. WARMUP_OMEGA_RPM (below) IS this knob.
-IC_NAMES=(idle spin)             # goes in the tag; the atlas parses ew separately, so both show
-IC_WARMUP_RPM=(100 1500)         # idle: sub-critical Couette IC | spin: supercritical Taylor IC
-SEED=0                           # ONE seed for this LOCATING probe (multi-seed the bistable band next)
-#
-# array index -> (energy_weight, IC).  Keep --array = 0-(len(ENERGY_WEIGHTS)*NIC - 1); the
-# %4 on --array above only throttles to 4 concurrent nodes -- all tasks still run.
+# array index -> energy_weight (one task each). Keep --array = 0-(len(ENERGY_WEIGHTS)-1).
 i=${SLURM_ARRAY_TASK_ID:-0}
-NIC=${#IC_NAMES[@]}
-ENERGY_WEIGHT=${ENERGY_WEIGHTS[$((i / NIC))]}
-IC_NAME=${IC_NAMES[$((i % NIC))]}
-IC_RPM=${IC_WARMUP_RPM[$((i % NIC))]}
-TAG="so_parallel_${CONTROL_MODE}_ew${ENERGY_WEIGHT}_ic${IC_NAME}_s${SEED}"
+ENERGY_WEIGHT=${ENERGY_WEIGHTS[$i]}
+TAG="so_parallel_${CONTROL_MODE}_ew${ENERGY_WEIGHT}_s${SEED}"
 
 # budgets. PRIMARY stop = 150 completed episodes of 120 s each. The policy converges by
 # ~ep100 (see the ew0.1 behavior plot), so 150 is enough to CLASSIFY idle vs spin while
@@ -85,18 +73,22 @@ FREEFORM_DT=1.0
 SAVE_EVERY=2000                # checkpoint + log snapshot every N grad steps
 
 # warmup: ~3 tau (80 s) spins the reactor up to a settled flow, done ONCE per task and
-# cached as the 0.warmed IC every episode resets to. WARMUP_OMEGA_RPM is the TWO-IC knob,
-# set per-task from IC_RPM above (idle 100 vs spin 1500) -- the initial flow regime.
-# NOTE: the spin IC warms at 1500 rpm, so its one-time warmup costs more than the idle IC;
-# if it ever diverges, lower IC_WARMUP_RPM's spin value or raise ramp_time.
+# cached as the 0.warmed IC every episode resets to. WARMUP_OMEGA_RPM sets that single
+# flow IC: 500 rpm = a developed supercritical Taylor-vortex field, representative of the
+# operating regime. If the warmup ever diverges, lower it or raise ramp_time.
 WARMUP_DURATION=80
-WARMUP_OMEGA_RPM=$IC_RPM        # <- idle (100) or spin (1500) per the two-IC probe
+WARMUP_OMEGA_RPM=500
 
 # reward weights (both terms now ~[0,1]). ENERGY_WEIGHT is set per-task by the sweep above.
 CONV_WEIGHT=1.0
 ENERGY_MODEL=motor
+# wallFlux normalizer: MEASURED steady wallFlux at omega_max (2500 rpm) under the
+# catalytic-wall mass-transfer model (side_outlet_cat_case). The wall model changes
+# the wallFlux magnitude, so we set the measured value explicitly instead of the
+# Q*c0 auto-fallback -> wf_index = wallFlux/WALLFLUX_MAX in [0,1], comparable to E_index.
+WALLFLUX_MAX=8.2e-9
 
-# side-outlet geometry / normalizers (env auto-computes wallflux_max=Q*c0 from these)
+# side-outlet geometry / normalizers (r_in/r_out/feed_velocity used for other terms)
 R_IN=25.4
 R_OUT=31.75
 FEED_VELOCITY=1.462e-3            # Umean = Q0(100 mL/min)/annulus area (Lopez, corrected)
@@ -123,7 +115,7 @@ WORKER_ROOT="${TMPDIR:-/tmp/$USER}/so_workers_${TAG}"
 export OMP_NUM_THREADS=1          # each pimpleFoam is serial; don't let libs grab extra cores
 export PYTHONUNBUFFERED=1
 
-echo "=== parallel TD3 (side-outlet) task ${i}: mode=$CONTROL_MODE energy_weight=$ENERGY_WEIGHT ic=$IC_NAME(warmup ${IC_RPM}rpm) seed=$SEED workers=$N_WORKERS ==="
+echo "=== parallel TD3 (side-outlet) task ${i}: mode=$CONTROL_MODE energy_weight=$ENERGY_WEIGHT warmup=${WARMUP_OMEGA_RPM}rpm seed=$SEED workers=$N_WORKERS ==="
 echo "    tag=$TAG  master=$MASTER_CASE  worker_root=$WORKER_ROOT  host=$(hostname)  cores=${SLURM_CPUS_PER_TASK:-?}"
 
 "$PYTHON" "$EXP_DIR/parallel_train.py" \
@@ -144,6 +136,7 @@ echo "    tag=$TAG  master=$MASTER_CASE  worker_root=$WORKER_ROOT  host=$(hostna
     --conv_weight "$CONV_WEIGHT" \
     --energy_weight "$ENERGY_WEIGHT" \
     --energy_model "$ENERGY_MODEL" \
+    --wallflux_max "$WALLFLUX_MAX" \
     --r_in "$R_IN" --r_out "$R_OUT" --feed_velocity "$FEED_VELOCITY" \
     --tag "$TAG" \
     --results_dir "$EXP_DIR/results"

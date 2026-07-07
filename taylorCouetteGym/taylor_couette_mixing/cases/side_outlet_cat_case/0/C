@@ -31,8 +31,11 @@ boundaryField
 
     outer_wall
     {
-        type            fixedValue;               // CATALYTIC wall: fast reaction sink
-        value           uniform 0;
+        // CATALYTIC wall: consumption handled by the wallMassTransfer coded
+        // fvOption (implicit sink k_c(omega)*C in the wall-adjacent cells), NOT
+        // by a resolved diffusive gradient the coarse mesh cannot represent.
+        // zeroGradient => no separate boundary diffusive flux (avoids double count).
+        type            zeroGradient;
     }
 
     bottom
