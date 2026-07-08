@@ -1,0 +1,25 @@
+CATALYSIS comparison (paper-style: equal conversion, motor power model)
+window t in [90.0, 120.0] s   duty=0.2  period=30.0s
+
+constant sweep:
+  rpm     conv    motor_P[W]  drag_P[W]
+     300   0.104       3.74     0.0171
+     500   0.143       6.11     0.0517
+     700   0.174       8.50     0.1095
+     900   0.202      10.93     0.1943
+    1200   0.236      14.63     0.3811
+
+pulsating sweep (D=0.20, T=30s):
+  mean    conv    motor_P[W]  drag_P[W]
+     300   0.262       3.71     0.1298
+     400   0.301       5.05     0.2637
+     500   0.335       6.47     0.4634
+
+EQUAL-CONVERSION power gap (pulsating vs constant at the SAME conversion):
+  conv=0.262: pulsating   3.71 W vs constant  14.63 W  ->  +74.6% power  (extrapolated)
+  conv=0.301: pulsating   5.05 W vs constant  14.63 W  ->  +65.5% power  (extrapolated)
+  conv=0.335: pulsating   6.47 W vs constant  14.63 W  ->  +55.8% power  (extrapolated)
+
+TD3 agent:
+  conv=0.335  mean_omega=0 rpm  motor_P=0.00 W  drag_P=0.0000 W
+  vs constant at equal conversion (14.63 W): +100.0% power
