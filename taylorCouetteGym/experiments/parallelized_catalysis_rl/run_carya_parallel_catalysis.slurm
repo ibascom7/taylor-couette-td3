@@ -106,7 +106,7 @@ EXP_DIR="experiments/parallelized_catalysis_rl"
 # Post-omega-coeffs-freeze-fix runs go in a SEPARATE tree so the old (corrupted,
 # frozen-wall) results/ stays frozen for before/after comparison. run_carya_compare.slurm
 # MUST point at this same RESULTS_DIR.
-RESULTS_DIR="$EXP_DIR/results_fixed"
+RESULTS_DIR="$EXP_DIR/results_round_2"
 mkdir -p "$EXP_DIR/logs"
 
 MASTER_CASE="taylor_couette_mixing/cases/side_outlet_cat_case"   # pre-configured drop-in

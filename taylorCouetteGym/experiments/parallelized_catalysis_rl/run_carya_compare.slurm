@@ -66,7 +66,7 @@ CMP="experiments/catalysis_rl/compare_catalysis.py"
 # MUST match run_carya_parallel_catalysis.slurm's RESULTS_DIR: read the post-fix
 # checkpoints from, and write the post-fix comparison into, the SAME separate tree
 # (keeps the old corrupted results/ untouched).
-RESULTS_DIR="$EXP_DIR/results_fixed"
+RESULTS_DIR="$EXP_DIR/results_round_2"
 TRAIN_RESULTS="$RESULTS_DIR/td3"
 OUTROOT="$RESULTS_DIR/comparison"
 BASE="$OUTROOT/_baselines"
