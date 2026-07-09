@@ -75,6 +75,31 @@ class Helpers():
              cwd=self.case_path, check=True,
              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
+        self._clear_omega_coeffs(latest_time)
+        return True
+
+    def _clear_omega_coeffs(self, latest_time):
+        """Delete any stale `omegaCoeffs` sub-dict left in the inner_wall BC.
+
+        CRITICAL: rotatingWallVelocity's omega is a Function1. When we `-set` the
+        inline form `omega table ( ... )`, pimpleFoam READS it, then on write
+        SERIALISES it back as the sub-dict form `omega table;` + `omegaCoeffs {
+        values ( ... ); }`. On the NEXT step foamDictionary again `-set`s the inline
+        `omega`, but OpenFOAM v2506 reads the coefficients from the coexisting
+        `omegaCoeffs` sub-dict and IGNORES the inline data -- so the wall FREEZES at
+        the first step's omega Function1 for the rest of the run (the env's per-step
+        omega updates are silently shadowed). Removing omegaCoeffs after every set
+        forces pimpleFoam to re-read the fresh inline table. `-remove` is a no-op
+        (exit 0) when the sub-dict is absent, so this is safe on the first step too.
+        """
+        subprocess.run(
+            ["foamDictionary",
+             "-entry", "boundaryField.inner_wall.omegaCoeffs",
+             "-remove",
+             f"{latest_time}/U"],
+             cwd=self.case_path, check=False,
+             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
         return True
 
     def _parse_metrics(self, line):
@@ -290,6 +315,7 @@ class Helpers():
             cwd=self.case_path, check=True,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
+        self._clear_omega_coeffs(latest)   # else the sticky omegaCoeffs freezes omega (see _clear_omega_coeffs)
         self._update_end_time(time_step)
         result = subprocess.run(
             ["pimpleFoam"], cwd=self.case_path, capture_output=True, text=True
