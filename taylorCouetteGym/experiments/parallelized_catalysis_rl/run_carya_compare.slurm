@@ -63,8 +63,12 @@ export PYTHONUNBUFFERED=1
 cd "$SLURM_SUBMIT_DIR"
 EXP_DIR="experiments/parallelized_catalysis_rl"
 CMP="experiments/catalysis_rl/compare_catalysis.py"
-TRAIN_RESULTS="$EXP_DIR/results/td3"
-OUTROOT="$EXP_DIR/results/comparison"
+# MUST match run_carya_parallel_catalysis.slurm's RESULTS_DIR: read the post-fix
+# checkpoints from, and write the post-fix comparison into, the SAME separate tree
+# (keeps the old corrupted results/ untouched).
+RESULTS_DIR="$EXP_DIR/results_fixed"
+TRAIN_RESULTS="$RESULTS_DIR/td3"
+OUTROOT="$RESULTS_DIR/comparison"
 BASE="$OUTROOT/_baselines"
 mkdir -p "$EXP_DIR/logs" "$OUTROOT"
 

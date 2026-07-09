@@ -103,6 +103,10 @@ PYTHON=/project/mwang/ibascom/envs/tc/bin/python
 
 cd "$SLURM_SUBMIT_DIR"
 EXP_DIR="experiments/parallelized_catalysis_rl"
+# Post-omega-coeffs-freeze-fix runs go in a SEPARATE tree so the old (corrupted,
+# frozen-wall) results/ stays frozen for before/after comparison. run_carya_compare.slurm
+# MUST point at this same RESULTS_DIR.
+RESULTS_DIR="$EXP_DIR/results_fixed"
 mkdir -p "$EXP_DIR/logs"
 
 MASTER_CASE="taylor_couette_mixing/cases/side_outlet_cat_case"   # pre-configured drop-in
@@ -139,6 +143,6 @@ echo "    tag=$TAG  master=$MASTER_CASE  worker_root=$WORKER_ROOT  host=$(hostna
     --wallflux_max "$WALLFLUX_MAX" \
     --r_in "$R_IN" --r_out "$R_OUT" --feed_velocity "$FEED_VELOCITY" \
     --tag "$TAG" \
-    --results_dir "$EXP_DIR/results"
+    --results_dir "$RESULTS_DIR"
 
-echo "=== done. checkpoints + logs -> $EXP_DIR/results/$ALGO/$TAG ==="
+echo "=== done. checkpoints + logs -> $RESULTS_DIR/$ALGO/$TAG ==="
