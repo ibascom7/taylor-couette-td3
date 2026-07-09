@@ -35,8 +35,7 @@ set -euo pipefail
 # ---- which sweep to eval (MUST match the training run) ---------------
 CONTROL_MODE=freeform
 SEED=0
-ENERGY_WEIGHTS=(0.01 0.03 0.05 0.07 0.09)        # match the training array's ew list
-IC_NAMES=(idle spin)                             # match the training array's two-IC probe
+ENERGY_WEIGHTS=(0.8 1.3 1.8 2.4 3.0)             # MUST match run_carya_parallel_catalysis.slurm's ew grid
 
 # ---- eval config ----------------------------------------------------
 # EVAL_SECONDS must equal training's MAX_STEPS_PER_EP so the freeform phase clock
@@ -49,6 +48,9 @@ PERIOD=30
 WARMUP_DURATION=80                 # match training (shortened side-outlet ~3 tau)
 WARMUP_OMEGA_RPM=500
 FEED_VELOCITY=1.462e-3             # match training (100 mL/min)
+WALLFLUX_MAX=8.2e-9                # MATCH training: sets the wf_norm scaling in the obs the
+                                   # policy conditions on (default would auto = Q*c0 = 2.315e-8,
+                                   # a DIFFERENT scale -> policy sees the wrong state -> wrong actions)
 
 # =====================================================================
 OPENFOAM_MODULE="OpenFOAM/v2506-foss-2025b"
@@ -74,16 +76,20 @@ rm -rf "$CASE"; cp -r taylor_couette_mixing/cases/side_outlet_cat_case "$CASE"
 COMMON=(--case "$CASE" --control_mode "$CONTROL_MODE" --eval-seconds "$EVAL_SECONDS"
         --const-rpm "$CONST_RPM" --puls-rpm "$PULS_RPM" --duty "$DUTY" --period "$PERIOD"
         --warmup_duration "$WARMUP_DURATION" --warmup_omega_rpm "$WARMUP_OMEGA_RPM"
-        --feed_velocity "$FEED_VELOCITY" --seed "$SEED")
+        --feed_velocity "$FEED_VELOCITY" --wallflux_max "$WALLFLUX_MAX" --seed "$SEED")
 
 # ---- 1) baseline sweeps ONCE (warms the case; caches baseline_sweep.npz + frames) ----
+# WIPE any stale cache first. The omega-coeffs-freeze fix CHANGES the pulsating baseline
+# (pre-fix the square wave ran FROZEN-CONSTANT at its step-0 peak speed, so "pulsating"
+# was really constant-at-peak). cache_valid() only checks params, not conv values, so
+# without this wipe the corrupted baseline_sweep.npz + frames_squarewave get reused.
 echo "=== baselines (constant + pulsating sweeps), computed once ==="
-"$PYTHON" "$CMP" --baselines-only --out "$BASE" "${COMMON[@]}"
+rm -rf "$BASE"
+"$PYTHON" "$CMP" --baselines-only --refresh-baselines --out "$BASE" "${COMMON[@]}"
 
 # ---- 2) per-policy eval, reusing the cached baselines + frames -------
 for EW in "${ENERGY_WEIGHTS[@]}"; do
- for IC in "${IC_NAMES[@]}"; do                                        # two-IC probe: idle & spin tags
-  TAG="so_parallel_${CONTROL_MODE}_ew${EW}_ic${IC}_s${SEED}"
+  TAG="so_parallel_${CONTROL_MODE}_ew${EW}_s${SEED}"                    # match training's output tag (no ic)
   POLICY="$TRAIN_RESULTS/$TAG/td3_tc_final"
   if [ ! -f "${POLICY}_actor" ]; then   # timeout fallback: newest td3_tc_t<N>
     POLICY=$(ls -d "$TRAIN_RESULTS/$TAG"/td3_tc_t*_actor 2>/dev/null | sort -V | tail -1 | sed 's/_actor$//' || true)
@@ -92,13 +98,12 @@ for EW in "${ENERGY_WEIGHTS[@]}"; do
     echo "SKIP $TAG: no checkpoint found"; continue
   fi
   OUT="$OUTROOT/$TAG"
-  mkdir -p "$OUT"
-  cp -f "$BASE/baseline_sweep.npz" "$OUT/"                              # reuse cached sweep
+  rm -rf "$OUT"; mkdir -p "$OUT"                                        # clean: drop any stale corrupted figures/frames
+  cp -f "$BASE/baseline_sweep.npz" "$OUT/"                              # reuse fresh sweep
   ln -sfn "$(readlink -f "$BASE/frames_constant")"   "$OUT/frames_constant"   # skip re-CFD
   ln -sfn "$(readlink -f "$BASE/frames_squarewave")" "$OUT/frames_squarewave"
   echo "=== compare $TAG  (policy=$POLICY) ==="
   "$PYTHON" "$CMP" --policy "$POLICY" --out "$OUT" "${COMMON[@]}"
- done
 done
 
 echo "=== done. beats-constant figures -> $OUTROOT/<tag>/fig_power_vs_conversion.png ==="
