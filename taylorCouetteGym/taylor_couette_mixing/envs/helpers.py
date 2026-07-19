@@ -300,12 +300,43 @@ class Helpers():
         step_metrics = [self._parse_metrics(l) for l in metric_lines]
         return step_metrics
 
+    @staticmethod
+    def sanitize_table_points(points, min_gap=1e-3, decimals=3):
+        """Quantize a (t, value) Function1 table so it survives foamDictionary's
+        re-serialization.
+
+        foamDictionary -set does NOT store the entry verbatim: it re-writes every
+        scalar token at the default IOstream precision of 6 SIGNIFICANT digits.
+        Table times separated by the builder's +1e-6 s anti-collision nudges (or
+        any sub-0.1 ms gap, e.g. overlapping ramps when a square wave's idle is
+        shorter than the ramp) serialize to the SAME 6-sig-fig number once t >= 1
+        (21.058251 and 21.058252 both become 21.0583), and the next pimpleFoam
+        start dies in TableBase with "out-of-order value ..." -- this killed the
+        first Carya modulation job (2026-07-18). 3-point ramp tables never
+        collided because their gaps are >= 0.05 s.
+
+        Rounding times to `decimals` (default 1 ms) and re-imposing a strictly
+        increasing >= min_gap grid guarantees distinct 6-sig-fig serializations
+        for any t < 1000 s. Values are untouched; edges move by <= ~1 ms per
+        point (negligible vs the 50 ms ramps)."""
+        out, prev = [], None
+        for t, w in points:
+            tq = round(float(t), decimals)
+            if prev is not None:
+                tq = max(tq, round(prev + min_gap, decimals))
+            out.append((tq, float(w)))
+            prev = tq
+        return out
+
     def do_simulation_table(self, points, time_step):
         """Like do_simulation but drives inner-wall omega from an explicit
         tabulated Function1 -- `points` = list of (absolute_time, omega_rad) --
         over the next `time_step` seconds. Used by the waveform env to run a full
         square-wave segment per control step. Continues from the latest time dir
-        (controlDict startFrom latestTime), same step-loop contract as do_simulation."""
+        (controlDict startFrom latestTime), same step-loop contract as do_simulation.
+        Points are sanitized (1 ms time grid) so the table survives foamDictionary's
+        6-significant-digit re-serialization -- see sanitize_table_points."""
+        points = self.sanitize_table_points(points)
         latest = self._get_latest_time()
         table = "table (" + " ".join(f"({t:.6f} {w:.6f})" for t, w in points) + ")"
         subprocess.run(

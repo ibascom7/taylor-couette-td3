@@ -152,6 +152,15 @@ Implementation notes (deviations from the spec text, both deliberate):
    the table above were run (`fig7_sweep_td3_prep`), so learned rewards are
    directly comparable. Template prep only compiles the coded FOs once
    (0.05 s throwaway run) and fans the compiled case out to the workers.
+3. **Table times are quantized to a 1 ms grid**
+   (`Helpers.sanitize_table_points`, applied inside `do_simulation_table` and
+   before the motor-power integral). foamDictionary re-serializes scalars at 6
+   SIGNIFICANT digits, so the wave builder's +1 µs anti-collision nudges
+   (active whenever idle = (1−D)·T < the 50 ms ramp, i.e. D near 1) collapsed
+   to duplicate times and pimpleFoam died in TableBase with "out-of-order
+   value" — this killed the first Carya job (2026-07-18, ~10 % of random
+   actions). Verified: 200k-sample fuzz + real foamDictionary round-trips +
+   an A/B pimpleFoam start on a previously-fatal table.
 
 Known caveat (measured): when T does not divide the 10 s block, the truncated
 last period is burst-first, so the REALIZED block mean sits above w_b — up to

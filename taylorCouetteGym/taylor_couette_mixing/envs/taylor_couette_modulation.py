@@ -189,6 +189,9 @@ class TaylorCouetteModulationEnv(gym.Env):
         pts, _ = square_wave_points(
             t0, self.block_dt, w_hi * RPM, w_low * RPM,
             period, duty, self.ramp_time, phase0=0.0)
+        # Sanitize BEFORE computing motor power so the reward integrates the
+        # exact table the BC runs (do_simulation_table re-sanitizes; idempotent).
+        pts = self.helpers.sanitize_table_points(pts)
         results = self.helpers.do_simulation_table(pts, self.block_dt)
 
         # Block averages over ALL METRICS samples (~0.1 s cadence at these
