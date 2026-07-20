@@ -23,9 +23,21 @@
 # waveform (D=80%, T=2.5 s: X=0.386, R=0.270 at w_b=300)? R>0.28 sustained =
 # genuine discovery; R~0.27 converged = clean validation. Noise floor +-0.01.
 #
+# v2 (after mod_wb300_s0 collapsed): s0 converged to the DEGENERATE corner
+# w_low=w_b (zero-amplitude wave = constant-300, R=0.229) even though its own
+# random phase proved modulation better (depth-quartile returns monotone,
+# 0.838->0.881; r_t vs depth_t-1 corr +0.35 -- the payoff lands one block
+# LATE, while the same-block corr is -0.18, so a weak critic reads "idling
+# hurts" and walks to the plateau where duty/period gradients vanish and
+# clipped noise can't escape). v2 therefore (a) REMOVES both constant-decoding
+# faces from the action box -- IDLE_MAX_RPM=200 < w_b and DUTY_MAX=0.95 < 1 --
+# so every admissible action modulates (top-s0-episode w_low band 60-175 rpm
+# stays comfortably interior), and (b) doubles exploration: START_TIMESTEPS
+# 500->1000 (200 random episodes), EXPL_NOISE 0.1->0.2.
+#
 # COST: 50 s episode ~ 40-53 min on a 7800X3D core at these speeds; Carya cores
-# are somewhat slower, call it ~1 h. 1000 episodes / 44 workers ~ 23 episodes
-# per worker ~ 23-27 h + ~2 min one-time template compile. -t 48 h covers it
+# are somewhat slower, call it ~1 h. 300 episodes / 44 workers ~ 7 episodes
+# per worker ~ 7 h + ~2 min one-time template compile. -t 12 h covers it
 # comfortably; SAVE_EVERY checkpoints make any overrun a usable policy.
 #
 # Submit:  sbatch experiments/modulation_rl/run_carya_modulation.slurm
@@ -40,7 +52,7 @@
 #SBATCH -c 48                     # whole Compute node: 44 workers + headroom for learner/OS
 #SBATCH --mem=8G                  # 44 solvers on the 3330-cell graded mesh are tiny
                                   #  (measured ~1.9 GB peak for 44 comparable solvers)
-#SBATCH -t 48:0:0                 # ~23-27 h expected (see COST above); checkpoints cover overrun
+#SBATCH -t 12:0:0                 # ~7 h expected (see COST above); checkpoints cover overrun
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bascomisaiah@gmail.com
 
@@ -50,7 +62,7 @@ set -euo pipefail
 ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
 SEED=0
-TAG="mod_wb300_s${SEED}"
+TAG="mod_wb300_v2_s${SEED}"
 
 # ---- the settled design (experiments/modulation_rl/README.md) -------
 # Fixed for this run: w_b=300, 50 s episodes, 10 s blocks, reward weights (1,1),
@@ -60,8 +72,11 @@ W_B_RPM=300
 EPISODE_DURATION=50
 BLOCK_DT=10
 DUTY_MIN=0.6
-DUTY_MAX=1.0
+DUTY_MAX=0.95                    # v2: <1 so the D=1 face can't decode to constant-w_b
 IDLE_MIN_RPM=0
+IDLE_MAX_RPM=200                 # v2: <w_b kills the w_low=w_b zero-amplitude corner s0
+                                 #  collapsed into; min depth 100 rpm, and the best s0
+                                 #  episodes (w_low 60-175 rpm) stay interior
 PERIOD_MIN=0.5                   # T floor: below it vortices low-pass the forcing
 PERIOD_MAX=5
 RAMP_TIME=0.05
@@ -69,12 +84,22 @@ P_MAX_WATT=31.94                 # motor power at 2500 rpm (global reward normal
 WALLFLUX_MAX=1.32e-8             # obs normalizer: steady resolved wallFlux at 2500 rpm
 
 # ---- budgets --------------------------------------------------------
-# PRIMARY stop = 1000 completed episodes (5 transitions each -> 5000 transitions;
-# the README budget). MAX_TIMESTEPS is a safety bound (~1200 episodes).
-MAX_EPISODES=1000
-MAX_TIMESTEPS=6000
-START_TIMESTEPS=500              # 100 fully-random episodes before the policy kicks in
-EXPL_NOISE=0.1                   # per raw dim; T is log-mapped so noise explores octaves
+# PRIMARY stop = 300 completed episodes (1500 transitions). MINIMAL SHAKEDOWN:
+# 200 random (the critic's clean interior data + landscape probe of the new
+# box) + 100 policy episodes. s0 proved the actor expresses its direction
+# within ~50-100 policy episodes (~250-500 grad steps -- the collapse was
+# fully pinned by then), so 100 policy eps answers the one shakedown question:
+# does the actor head INTERIOR (pass) or pin at a bound (fail)? It does NOT
+# give a converged R -- judge by w_low's trajectory and R >= the random-phase
+# mean, not by distance to the 0.270 champion. Once proven, the real run is a
+# FRESH longer run from scratch (bump MAX_EPISODES/MAX_TIMESTEPS/-t, new tag).
+# MAX_TIMESTEPS = ~1.2x safety bound.
+MAX_EPISODES=300
+MAX_TIMESTEPS=1800
+START_TIMESTEPS=1000             # v2: 200 fully-random episodes (was 100) -- more interior
+                                 #  (s,a) coverage for the critic's delayed-payoff fit
+EXPL_NOISE=0.2                   # v2: was 0.1; on w_low that is ~20 rpm std, enough to
+                                 #  probe depth even if the actor drifts toward a bound
 BATCH_SIZE=64
 SAVE_EVERY=500                   # checkpoint + log snapshot every N grad steps
 
@@ -113,6 +138,7 @@ echo "    tag=$TAG  master=$MASTER_CASE  worker_root=$WORKER_ROOT  host=$(hostna
     --block_dt "$BLOCK_DT" \
     --duty_min "$DUTY_MIN" --duty_max "$DUTY_MAX" \
     --idle_min_rpm "$IDLE_MIN_RPM" \
+    --idle_max_rpm "$IDLE_MAX_RPM" \
     --period_min "$PERIOD_MIN" --period_max "$PERIOD_MAX" \
     --ramp_time "$RAMP_TIME" \
     --p_max_watt "$P_MAX_WATT" \
