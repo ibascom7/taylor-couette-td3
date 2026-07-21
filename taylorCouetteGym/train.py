@@ -6,8 +6,9 @@ can be compared by plot_comparison.py.
 
 Each env.step() invokes pimpleFoam, so timesteps are budgeted carefully: no
 separate eval env, small start_timesteps, modest max_timesteps. Episodes are
-truncated at max_steps (never terminated), so done_bool=0 everywhere and the
-critic always bootstraps past episode boundaries.
+truncated at max_steps; the horizon end is stored as done=1 so the critic's
+value chain terminates there (fixed-horizon task -- see the comment at the
+buffer.add call).
 
 The env mutates its OpenFOAM case directory in place, so concurrent runs MUST
 use distinct --case_path copies (e.g. one per Slurm array task).
@@ -494,8 +495,12 @@ if __name__ == "__main__":
 
         next_state = obs_to_state(next_obs)
         done = terminated or truncated
-        # Truncation is not a real terminal -> always bootstrap.
-        done_bool = float(terminated)
+        # Fixed-horizon episodes: the horizon end terminates the value chain.
+        # (Bootstrapping through truncation is only correct for continuing
+        # tasks; here end-of-episode states never occur as source states, so
+        # their Q is ungrounded and free to drift -- it dragged the actor to an
+        # arbitrary action corner in every modulation run until 2026-07-21.)
+        done_bool = float(done)
 
         replay_buffer.add(state, action, next_state, reward, done_bool)
 

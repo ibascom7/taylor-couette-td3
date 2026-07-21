@@ -29,7 +29,19 @@
 # idle cost corr -0.18 vs NEXT-block renewal payoff corr +0.35 -- a weak critic
 # only sees the cost), not the corner itself.
 #
-# v3 QUESTION: freeze the runaway idle dimension entirely (w_low = 0 always,
+# v4 = v3 RERUN WITH THE ROOT-CAUSE FIX. v3 exposed the real bug: episodes
+# end by TRUNCATION but the buffer stored done=float(terminated)=0 always, so
+# the critic bootstrapped into end-of-episode states (clock=1) that never
+# occur as source states -> their Q is UNGROUNDED, drifts (probed: Q=0.78 vs
+# true 0), and its gradient dragged the actor to the same raw action corner
+# (-1,+1,+1) in s0/v2/v3 alike -- v3's actor even saturated its DEAD idle dim,
+# proving the driver is internal. parallel_train.py now stores
+# done=(terminated or truncated). The v3 random phase also mapped the reward
+# landscape: champion cell D in [0.8,0.9), T in [2.5,5) is genuinely best
+# (R 0.275) and same-block corr(r, D) = +0.68 -- the signal is clean; only
+# the bootstrap was broken.
+#
+# v3 QUESTION (unchanged, now a fair test): freeze the runaway idle dimension (w_low = 0 always,
 # the same on/off family as the static benchmark grid) and learn ONLY (D, T).
 # The box now contains a KNOWN ground truth interior to it: the static champion
 # D=80%, T=2.5 s (X=0.386, R=0.270). PASS = policy settles near it (or better);
@@ -65,7 +77,7 @@ set -euo pipefail
 ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
 SEED=0
-TAG="mod_wb300_v3_s${SEED}"
+TAG="mod_wb300_v4_s${SEED}"
 
 # ---- the settled design (experiments/modulation_rl/README.md) -------
 # Fixed for this run: w_b=300, 50 s episodes, 10 s blocks, reward weights (1,1),

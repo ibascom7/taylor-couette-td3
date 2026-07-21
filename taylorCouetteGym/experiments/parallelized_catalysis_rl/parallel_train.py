@@ -230,7 +230,13 @@ def collector_loop(wid, env, policy, buffer, obs_to_state, cfg, shared, stop_eve
                 consec_fail = 0   # a good step clears the failure streak
 
                 next_state = obs_to_state(next_obs)
-                buffer.add(state, action, next_state, reward, float(terminated))
+                # Fixed-horizon episodes: treat the horizon end as terminal.
+                # done=0 here made the critic bootstrap into end-of-episode
+                # states that never occur as source states, so their Q is
+                # ungrounded and drifts, dragging the actor toward an arbitrary
+                # action corner (see modulation_rl v3 control run, 2026-07-21).
+                buffer.add(state, action, next_state, reward,
+                           float(terminated or truncated))
 
                 with shared.lock:
                     shared.total_env_steps += 1

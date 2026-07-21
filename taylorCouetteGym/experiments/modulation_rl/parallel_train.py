@@ -236,7 +236,14 @@ def collector_loop(wid, env, policy, buffer, cfg, shared, stop_event):
                 consec_fail = 0   # a good step clears the failure streak
 
                 next_state = np.asarray(next_obs, dtype=np.float32)
-                buffer.add(state, action, next_state, reward, float(terminated))
+                # Fixed-horizon task with the clock in the obs: the horizon end
+                # ends the value chain. clock=1 states never occur as SOURCE
+                # states, so bootstrapping into them (done=0) regresses toward
+                # an ungrounded Q that drifts freely and drags the actor to an
+                # arbitrary action corner (s0/v2/v3 all pinned raw (-1,+1,+1);
+                # v3's actor even saturated its DEAD idle dim -- proven 2026-07-21).
+                buffer.add(state, action, next_state, reward,
+                           float(terminated or truncated))
 
                 with shared.lock:
                     shared.total_env_steps += 1
