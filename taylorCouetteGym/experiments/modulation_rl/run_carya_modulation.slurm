@@ -12,28 +12,31 @@
 #   - 50 s episodes of 5 x 10 s control blocks, from the PRISTINE pre-filled IC
 #     (NO warmup -- episodes are directly comparable to the static-grid
 #     benchmarks in experiments/modulation_rl/README.md).
-#   - action per block: (duty D in [0.6,1], idle w_low in [0,300] rpm,
+#   - action per block: (duty D in [0.6,0.9], idle w_low FROZEN at 0 rpm,
 #     period T in [0.5,5] s log-mapped); burst speed SOLVED from the fixed-mean
-#     constraint w_hi = (w_b - (1-D)*w_low)/D  ->  commanded mean = w_b always,
-#     w_hi <= 500 rpm (proven stable; the sweep ran 2500 rpm clean).
+#     constraint w_hi = (w_b - (1-D)*w_low)/D = w_b/D  ->  commanded mean = w_b
+#     always, w_hi <= 500 rpm (proven stable; the sweep ran 2500 rpm clean).
+#     The a1 (idle) action dim is DEAD (zero-width range decodes to 0) -- kept
+#     so state/action dims match earlier runs' checkpoints and code paths.
 #   - reward per block: X_block - P_block/31.94 W (block-avg conversion minus
 #     normalized motor power on the commanded wave).
 #
-# QUESTION: can state-dependent, block-varying modulation beat the best STATIC
-# waveform (D=80%, T=2.5 s: X=0.386, R=0.270 at w_b=300)? R>0.28 sustained =
-# genuine discovery; R~0.27 converged = clean validation. Noise floor +-0.01.
+# v3 CONTROL RUN. History: s0 collapsed to the degenerate w_low=w_b corner
+# (constant-300, R=0.229). v2 capped the box (idle<=200, D<=0.95) -- the cap
+# held (no constant wave possible) but the actor STILL raced to the shallowest
+# reachable corner (D=0.6, wlo=200, T=5; R~0.235 < its own random baseline
+# 0.884-return phase), proving the root cause is CREDIT ASSIGNMENT (same-block
+# idle cost corr -0.18 vs NEXT-block renewal payoff corr +0.35 -- a weak critic
+# only sees the cost), not the corner itself.
 #
-# v2 (after mod_wb300_s0 collapsed): s0 converged to the DEGENERATE corner
-# w_low=w_b (zero-amplitude wave = constant-300, R=0.229) even though its own
-# random phase proved modulation better (depth-quartile returns monotone,
-# 0.838->0.881; r_t vs depth_t-1 corr +0.35 -- the payoff lands one block
-# LATE, while the same-block corr is -0.18, so a weak critic reads "idling
-# hurts" and walks to the plateau where duty/period gradients vanish and
-# clipped noise can't escape). v2 therefore (a) REMOVES both constant-decoding
-# faces from the action box -- IDLE_MAX_RPM=200 < w_b and DUTY_MAX=0.95 < 1 --
-# so every admissible action modulates (top-s0-episode w_low band 60-175 rpm
-# stays comfortably interior), and (b) doubles exploration: START_TIMESTEPS
-# 500->1000 (200 random episodes), EXPL_NOISE 0.1->0.2.
+# v3 QUESTION: freeze the runaway idle dimension entirely (w_low = 0 always,
+# the same on/off family as the static benchmark grid) and learn ONLY (D, T).
+# The box now contains a KNOWN ground truth interior to it: the static champion
+# D=80%, T=2.5 s (X=0.386, R=0.270). PASS = policy settles near it (or better);
+# FAIL = policy pins D at the 0.9 ceiling (the shallowest wave, the bias
+# direction) -> the n-step-return critic fix is required before the long run.
+# DUTY_MAX=0.9 (not 0.95) because with w_low=0 a D=0.95 wave is 95% constant --
+# too close to the degenerate family this experiment exists to exclude.
 #
 # COST: 50 s episode ~ 40-53 min on a 7800X3D core at these speeds; Carya cores
 # are somewhat slower, call it ~1 h. 300 episodes / 44 workers ~ 7 episodes
@@ -62,7 +65,7 @@ set -euo pipefail
 ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
 SEED=0
-TAG="mod_wb300_v2_s${SEED}"
+TAG="mod_wb300_v3_s${SEED}"
 
 # ---- the settled design (experiments/modulation_rl/README.md) -------
 # Fixed for this run: w_b=300, 50 s episodes, 10 s blocks, reward weights (1,1),
@@ -72,11 +75,14 @@ W_B_RPM=300
 EPISODE_DURATION=50
 BLOCK_DT=10
 DUTY_MIN=0.6
-DUTY_MAX=0.95                    # v2: <1 so the D=1 face can't decode to constant-w_b
+DUTY_MAX=0.9                     # v3: 0.9 ceiling; at w_low=0 a D=0.95 wave is nearly
+                                 #  constant, and the pass/fail read needs the champion
+                                 #  D=0.8 interior with room on both sides
 IDLE_MIN_RPM=0
-IDLE_MAX_RPM=200                 # v2: <w_b kills the w_low=w_b zero-amplitude corner s0
-                                 #  collapsed into; min depth 100 rpm, and the best s0
-                                 #  episodes (w_low 60-175 rpm) stay interior
+IDLE_MAX_RPM=0                   # v3 CONTROL: zero-width range freezes w_low=0 (full-stop
+                                 #  idle, the static-benchmark waveform family); the a1
+                                 #  action dim decodes to 0 regardless -> the runaway
+                                 #  dimension from s0/v2 no longer exists
 PERIOD_MIN=0.5                   # T floor: below it vortices low-pass the forcing
 PERIOD_MAX=5
 RAMP_TIME=0.05
@@ -87,10 +93,11 @@ WALLFLUX_MAX=1.32e-8             # obs normalizer: steady resolved wallFlux at 2
 # PRIMARY stop = 300 completed episodes (1500 transitions). MINIMAL SHAKEDOWN:
 # 200 random (the critic's clean interior data + landscape probe of the new
 # box) + 100 policy episodes. s0 proved the actor expresses its direction
-# within ~50-100 policy episodes (~250-500 grad steps -- the collapse was
-# fully pinned by then), so 100 policy eps answers the one shakedown question:
-# does the actor head INTERIOR (pass) or pin at a bound (fail)? It does NOT
-# give a converged R -- judge by w_low's trajectory and R >= the random-phase
+# within ~50-100 policy episodes (~250-500 grad steps -- s0/v2 both fully
+# pinned by then), so 100 policy eps answers the one control question:
+# does (D,T) head toward the interior champion D=0.8/T=2.5 (pass) or does D
+# pin at the 0.9 ceiling (fail -> critic needs n-step returns)? It does NOT
+# give a converged R -- judge by the D/T trajectory and R >= the random-phase
 # mean, not by distance to the 0.270 champion. Once proven, the real run is a
 # FRESH longer run from scratch (bump MAX_EPISODES/MAX_TIMESTEPS/-t, new tag).
 # MAX_TIMESTEPS = ~1.2x safety bound.
