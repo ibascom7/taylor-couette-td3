@@ -1,0 +1,113 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volVectorField;
+    location        "0";
+    object          U;
+}
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 0 0 0 );
+
+boundaryField
+{
+    inner_wall
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           table ( ( 0 26.1799 ) ( 7.975 26.1799 ) ( 8.025 0 ) ( 9.975 0 ) ( 10.025 26.1799 ) ( 17.975 26.1799 ) ( 18.025 0 ) ( 19.975 0 ) ( 20.025 26.1799 ) ( 27.975 26.1799 ) ( 28.025 0 ) ( 29.975 0 ) ( 30.025 26.1799 ) ( 37.975 26.1799 ) ( 38.025 0 ) ( 39.975 0 ) ( 40.025 26.1799 ) ( 47.975 26.1799 ) ( 48.025 0 ) ( 49.975 0 ) ( 50.025 26.1799 ) ( 57.975 26.1799 ) ( 58.025 0 ) ( 59.975 0 ) ( 60.025 26.1799 ) ( 67.975 26.1799 ) ( 68.025 0 ) ( 69.975 0 ) ( 70.025 26.1799 ) ( 77.975 26.1799 ) ( 78.025 0 ) ( 79.975 0 ) ( 80.025 26.1799 ) ( 87.975 26.1799 ) ( 88.025 0 ) ( 89.975 0 ) ( 90.025 26.1799 ) ( 97.975 26.1799 ) ( 98.025 0 ) ( 99.975 0 ) ( 100.025 26.1799 ) ( 107.975 26.1799 ) ( 108.025 0 ) ( 109.975 0 ) ( 110.025 26.1799 ) ( 117.975 26.1799 ) ( 118.025 0 ) ( 119.975 0 ) ( 120.025 26.1799 ) ( 127.975 26.1799 ) ( 128.025 0 ) ( 129.975 0 ) ( 130.025 26.1799 ) ( 137.975 26.1799 ) ( 138.025 0 ) ( 139.975 0 ) ( 140.025 26.1799 ) ( 147.975 26.1799 ) ( 148.025 0 ) ( 149.975 0 ) ( 150.025 26.1799 ) ( 157.975 26.1799 ) ( 158.025 0 ) ( 159.975 0 ) ( 160.025 26.1799 ) ( 167.975 26.1799 ) ( 168.025 0 ) ( 169.975 0 ) ( 170.025 26.1799 ) ( 177.975 26.1799 ) ( 178.025 0 ) ( 179.975 0 ) ( 180.025 26.1799 ) ( 187.975 26.1799 ) ( 188.025 0 ) ( 189.975 0 ) ( 190.025 26.1799 ) ( 197.975 26.1799 ) ( 198.025 0 ) ( 199.975 0 ) ( 200.025 26.1799 ) ( 207.975 26.1799 ) ( 208.025 0 ) ( 209.975 0 ) ( 210.025 26.1799 ) ( 217.975 26.1799 ) ( 218.025 0 ) ( 219.975 0 ) ( 220.025 26.1799 ) ( 227.975 26.1799 ) ( 228.025 0 ) ( 229.975 0 ) ( 230.025 26.1799 ) ( 237.975 26.1799 ) ( 238.025 0 ) ( 239.975 0 ) ( 240.025 26.1799 ) ( 247.975 26.1799 ) ( 248.025 0 ) ( 249.975 0 ) ( 250.025 26.1799 ) ( 257.975 26.1799 ) ( 258.025 0 ) ( 259.975 0 ) ( 260.025 26.1799 ) ( 267.975 26.1799 ) ( 268.025 0 ) ( 269.975 0 ) ( 270.025 26.1799 ) ( 277.975 26.1799 ) ( 278.025 0 ) ( 279.975 0 ) ( 280.025 26.1799 ) ( 287.975 26.1799 ) ( 288.025 0 ) ( 289.975 0 ) ( 290.025 26.1799 ) ( 297.975 26.1799 ) ( 298.025 0 ) ( 301 0 ) );
+    }
+    outer_wall
+    {
+        type            noSlip;
+    }
+    bottom
+    {
+        type            noSlip;
+    }
+    inlet
+    {
+        type            codedFixedValue;
+        value           uniform ( 0 0 0 );
+        name            lopezFullyDevelopedAnnularTopInlet;
+        code            #{
+            const fvPatch& p = patch();
+            vectorField Uin(p.size(), vector::zero);
+
+            const vectorField& Cf = p.Cf();
+            const vectorField& Sf = p.Sf();
+
+            const scalar Ri = 0.0254;
+            const scalar Ro = 0.03175;
+            const scalar Q0 = 100e-6/60.0;  // full 360-degree flow rate [m3/s]
+            // UNIFIED to 100 mL/min to match side_outlet_cat_wallmodel (was Yuhe's
+            // 40 mL/min). This makes the outer-wall catalytic BC the ONLY difference
+            // between the two cases (single controlled variable), and shrinks the
+            // residence time (tau ~ 26 s) so the episode reaches steady state well.
+            const scalar pi = 3.1415926535897932384626433832795;
+
+            const scalar Aann = pi*(sqr(Ro) - sqr(Ri));
+            const scalar Umean = Q0/Aann;
+
+            scalarField shape(p.size(), scalar(0));
+            scalar sumShapeA = scalar(0);
+            scalar sumA = scalar(0);
+
+            forAll(Cf, faceI)
+            {
+                const scalar r = sqrt(sqr(Cf[faceI].x()) + sqr(Cf[faceI].y()));
+
+                scalar f =
+                    sqr(Ro) - sqr(r)
+                  - (sqr(Ro) - sqr(Ri))/log(Ro/Ri)*log(Ro/r);
+
+                shape[faceI] = max(f, scalar(0));
+
+                const scalar Af = mag(Sf[faceI]);
+                sumShapeA += shape[faceI]*Af;
+                sumA      += Af;
+            }
+
+            reduce(sumShapeA, sumOp<scalar>());
+            reduce(sumA, sumOp<scalar>());
+
+            const scalar meanShape = sumShapeA/max(sumA, VSMALL);
+            const scalar scale = Umean/max(meanShape, VSMALL);
+
+            forAll(Cf, faceI)
+            {
+                const vector nHat = Sf[faceI]/mag(Sf[faceI]);
+                // Top inlet outward normal points +z; inflow is opposite to it.
+                Uin[faceI] = -scale*shape[faceI]*nHat;
+            }
+
+            operator==(Uin);
+        #};
+    }
+    side_outlet
+    {
+        type            zeroGradient;
+    }
+    front
+    {
+        type            wedge;
+    }
+    back
+    {
+        type            wedge;
+    }
+}
+
+
+// ************************************************************************* //
