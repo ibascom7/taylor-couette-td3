@@ -1,4 +1,4 @@
-"""Parallelized TD3 over block-wise waveform modulation (fixed-mean w_b).
+"""Parallelized TD3 over block-wise waveform modulation.
 
 Same harness as experiments/parallelized_catalysis_rl/parallel_train.py -- N env
 workers, each with its OWN OpenFOAM case copy, run pimpleFoam rollouts
@@ -6,9 +6,12 @@ CONCURRENTLY in threads, pushing transitions into ONE shared replay buffer; a
 single TD3 learner trains on the pooled data -- but the environment is
 TaylorCouetteModulationEnv (see taylor_couette_mixing/envs/
 taylor_couette_modulation.py and experiments/modulation_rl/README.md):
-5 blocks x 10 s per 50 s episode, 3-D action (duty, idle speed, log-period)
-with the burst speed solved from the fixed-mean constraint, reward
-X_block - P_block/P_max.
+5 blocks x 10 s per 50 s episode, reward X_block - P_block/P_max. Two action
+modes: FREE-MEAN (default, --w_b_rpm omitted): 3-D action (duty, nominal mean
+w_nom, log-period) -- the agent picks its LOW/mean speed per block and the env
+converts it to the burst w_hi = w_nom/D (idle pinned at 0). Fixed-mean
+(--w_b_rpm <rpm>): 3-D action (duty, idle speed, log-period) with the burst
+speed solved from the fixed-mean constraint.
 
 TWO deliberate differences from the catalysis harness:
   1. NO warmup / no 0.warmed. Episodes start from the PRISTINE pre-filled IC
@@ -175,6 +178,7 @@ def make_env(case_path, args):
         block_dt=args.block_dt,
         duty_min=args.duty_min, duty_max=args.duty_max,
         idle_min_rpm=args.idle_min_rpm, idle_max_rpm=args.idle_max_rpm,
+        nom_min_rpm=args.nom_min_rpm, nom_max_rpm=args.nom_max_rpm,
         period_min=args.period_min, period_max=args.period_max,
         ramp_time=args.ramp_time,
         p_max_watt=args.p_max_watt,
@@ -321,6 +325,16 @@ def _snapshot_logs(run_dir, shared):
     _save_params(run_dir, params)
 
 
+def _save_buffer(run_dir, buffer):
+    """Persist the replay buffer so every run doubles as an offline dataset
+    (surrogate refits, offline learner iteration). ~250 KB at this scale."""
+    with buffer._lock:
+        n = buffer.size
+        arrs = {k: getattr(buffer, k)[:n].copy()
+                for k in ("state", "action", "next_state", "reward", "not_done")}
+    np.savez_compressed(os.path.join(run_dir, "replay_buffer.npz"), **arrs)
+
+
 def learner_loop(policy, buffer, cfg, shared, stop_event, run_dir, ckpt_prefix):
     grad_steps, last_save, t0 = 0, 0, time.time()
     while True:
@@ -336,6 +350,7 @@ def learner_loop(policy, buffer, cfg, shared, stop_event, run_dir, ckpt_prefix):
             if grad_steps - last_save >= cfg["save_every"]:
                 policy.save(f"{ckpt_prefix}_t{grad_steps}")
                 _snapshot_logs(run_dir, shared)
+                _save_buffer(run_dir, buffer)
                 rate = collected / max(time.time() - t0, 1e-9)
                 print(f"[learner] grad={grad_steps} collected={collected} "
                       f"buf={buffer.size} rate={rate:.2f} env-steps/s saved t{grad_steps}",
@@ -396,9 +411,19 @@ def build_parser():
     p.add_argument("--tau", type=float, default=0.005)
     p.add_argument("--save_every", type=int, default=500, help="save every N grad steps.")
     # env (modulation design; defaults = the settled README spec)
-    p.add_argument("--w_b_rpm", type=float, default=300.0,
-                   help="FIXED nominal (mean) speed [rpm]; the burst speed is solved "
-                        "from this every block.")
+    p.add_argument("--w_b_rpm", type=float, default=None,
+                   help="FIXED nominal (mean) speed [rpm]; the burst speed is then "
+                        "solved from it every block. OMIT for the FREE-MEAN action "
+                        "space (v5): a1 chooses the nominal mean w_nom per block "
+                        "(the low speed; the env CONVERTS it to the burst "
+                        "w_hi = w_nom/D), idle pinned at --idle_min_rpm, and the "
+                        "X - P/P_max reward arbitrates power natively.")
+    p.add_argument("--nom_min_rpm", type=float, default=0.0,
+                   help="free-mean only: lower end of the a1 -> w_nom map.")
+    p.add_argument("--nom_max_rpm", type=float, default=500.0,
+                   help="free-mean only: upper end of the a1 -> w_nom map "
+                        "(500 = benchmark-grid ceiling; bursts reach w_nom/D "
+                        "<= 2500 rpm, the proven fig7 envelope = P_max).")
     p.add_argument("--episode_duration", type=float, default=50.0)
     p.add_argument("--block_dt", type=float, default=10.0,
                    help="seconds per control block (5 decisions per 50 s episode).")
@@ -465,8 +490,10 @@ def main():
     state_dim = np.asarray(obs0).shape[0]
     action_dim = envs[0].action_space.shape[0]
     max_action = float(envs[0].action_space.high[0])
+    mode = ("FREE-MEAN w_nom<=%grpm" % args.nom_max_rpm if args.w_b_rpm is None
+            else f"fixed-mean w_b={args.w_b_rpm}rpm")
     print(f"[{args.algo}] tag={tag} workers={args.n_workers} state_dim={state_dim} "
-          f"action_dim={action_dim} w_b={args.w_b_rpm}rpm "
+          f"action_dim={action_dim} {mode} "
           f"blocks={envs[0].max_steps}x{args.block_dt}s -> {run_dir}", flush=True)
 
     policy = make_policy(args.algo, state_dim, action_dim, max_action,
@@ -504,6 +531,7 @@ def main():
         grad_steps += 1
     policy.save(f"{ckpt_prefix}_final")
     _snapshot_logs(run_dir, shared)
+    _save_buffer(run_dir, buffer)
     print(f"[done] collected={shared.total_env_steps} grad_steps={grad_steps} "
           f"episodes={len(shared.episode_returns)} wall={time.time()-t0:.0f}s -> {run_dir}",
           flush=True)

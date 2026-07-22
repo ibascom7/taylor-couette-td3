@@ -1,25 +1,34 @@
-"""Block-wise waveform modulation of the inner cylinder at a FIXED nominal
-(mean) speed, on the graded Sc=1075 side-outlet reactor.
+"""Block-wise waveform modulation of the inner cylinder on the graded Sc=1075
+side-outlet reactor. TWO action-space modes (experiments/modulation_rl/README.md):
 
-Implements the design settled in experiments/modulation_rl/README.md: every
-`block_dt` (10 s) the agent picks a duty-cycle square waveform for the coming
-block; the burst speed is SOLVED from the fixed-mean constraint so every block's
-commanded time-average equals w_b. TD3's question is whether state-dependent,
-block-varying modulation can beat the best static waveform (D=80%, T<=2.5 s,
-R~0.270 at w_b=300), not to rediscover it.
+FREE-MEAN mode (w_b_rpm=None; the v5 "interesting action space", 2026-07-21):
+    a0 -> duty D        in [duty_min, duty_max]      (linear; e.g. [0.2, 1.0])
+    a1 -> nominal w_nom in [nom_min, nom_max] rpm    (linear; default [0, 500])
+    a2 -> period T      in [period_min, period_max] s (LOG map; e.g. [0.5, 10])
+The agent chooses its LOW/nominal (mean) speed and the env CONVERTS it to the
+burst exactly like the paper's Eq. 8 pulse family (and the fixed-mean mode):
+w_hi = (w_nom - (1-D)*w_low) / D, idle w_low = idle_min_rpm (default 0). So
+every block's commanded mean IS the chosen w_nom -- free-mean simply means the
+agent picks w_b per block. Bursts reach w_nom/D <= 500/0.2 = 2500 rpm, the
+envelope the fig7 sweep ran clean and the definition of P_max (motor power at
+2500 rpm) -> P/P_max <= 1 by construction. The X - P/P_max reward arbitrates
+the conversion-vs-power trade natively (measured landscape: interior optimum,
+pulsed w_b~200 R=0.270; reward spans ~0.09 across the box vs ~0.015 under the
+fixed-mean design). Degeneracies (tolerated, legitimate strategies):
+w_nom=0 -> full-stop block (D, T meaningless); D=1 -> constant at w_nom
+(T meaningless).
 
-Action (3-vector in [-1, 1], decoded per block):
-    a0 -> duty D      in [duty_min, duty_max]        (linear; default [0.6, 1.0])
-    a1 -> idle w_low  in [idle_min, idle_max] rpm    (linear; default [0, w_b])
-    a2 -> period T    in [period_min, period_max] s  (LOG map; default [0.5, 5])
-Burst speed is NEVER chosen:  w_hi = (w_b - (1-D)*w_low) / D,  so the commanded
-mean of every admissible block is w_b (equal motor power across actions -> the
-reward is effectively pure conversion; kept as X - P/P_max for comparability
-across future w_b). With D >= 0.6 and w_low <= w_b = 300, w_hi <= 500 rpm --
-proven stable on this mesh (the sweep ran 2500 rpm clean).
-CAVEAT: when T does not divide block_dt the last (truncated) period is
-burst-first, so the REALIZED block mean can sit up to ~5% above w_b; the reward
-stays honest because P_block is computed on the commanded wave as-built.
+FIXED-MEAN mode (w_b_rpm=<rpm>; the original design, kept for compatibility):
+    a0 -> duty D, a1 -> idle w_low in [idle_min, idle_max] rpm, a2 -> period T.
+Burst speed is SOLVED from the fixed-mean constraint, never chosen:
+w_hi = (w_b - (1-D)*w_low) / D, so every block's commanded time-average equals
+w_b (equal motor power across actions). With D >= 0.6 and w_low <= w_b = 300,
+w_hi <= 500 rpm -- proven stable on this mesh (the sweep ran 2500 rpm clean).
+
+CAVEAT (both modes): when T does not divide block_dt the last (truncated)
+period is burst-first, so the REALIZED block mean can sit above the commanded
+mean; the reward stays honest because P_block is computed on the commanded
+wave as-built.
 
 Wave phase RESETS at each block boundary (every block opens with a burst):
 fully determined by (action, t), no hidden state -- a structural prior, noted
@@ -73,14 +82,18 @@ class TaylorCouetteModulationEnv(gym.Env):
     def __init__(
         self,
         case_path,
-        w_b_rpm=300.0,
+        w_b_rpm=None,            # None -> FREE-MEAN mode (a1 chooses w_hi);
+                                 # a number -> fixed-mean mode (w_hi solved)
         episode_duration=50.0,
         block_dt=10.0,
         duty_min=0.6,
         duty_max=1.0,
         idle_min_rpm=0.0,
-        idle_max_rpm=None,       # None -> w_b (idle can reach the mean; both
-                                 # degeneracies D=1 / w_low=w_b decode to constant-w_b)
+        idle_max_rpm=None,       # fixed-mean: None -> w_b. free-mean: ignored,
+                                 # w_low is pinned at idle_min_rpm (no dim left)
+        nom_min_rpm=0.0,         # free-mean only: a1 range for the nominal w_nom
+        nom_max_rpm=500.0,       # benchmark-grid ceiling; bursts reach nom/duty
+                                 # <= 2500 rpm = the proven fig7 envelope = P_max
         period_min=0.5,
         period_max=5.0,
         ramp_time=0.05,
@@ -90,14 +103,19 @@ class TaylorCouetteModulationEnv(gym.Env):
         capture_dir=None,
     ):
         self.helpers = Helpers(case_path)
-        self.w_b = float(w_b_rpm)
+        self.w_b = None if w_b_rpm is None else float(w_b_rpm)
         self.block_dt = float(block_dt)
         self.max_steps = int(round(float(episode_duration) / self.block_dt))
         self.episode_duration = self.max_steps * self.block_dt
         self.duty_min = float(duty_min)
         self.duty_max = float(duty_max)
         self.idle_min = float(idle_min_rpm)
-        self.idle_max = self.w_b if idle_max_rpm is None else float(idle_max_rpm)
+        if self.w_b is None:
+            self.idle_max = self.idle_min      # free-mean: w_low is a constant
+        else:
+            self.idle_max = self.w_b if idle_max_rpm is None else float(idle_max_rpm)
+        self.nom_min = float(nom_min_rpm)
+        self.nom_max = float(nom_max_rpm)
         self._logTmin = float(np.log(period_min))
         self._logTmax = float(np.log(period_max))
         self.ramp_time = float(ramp_time)
@@ -127,14 +145,24 @@ class TaylorCouetteModulationEnv(gym.Env):
         self.last_params = (float("nan"),) * 4   # (duty, w_low_rpm, period_s, w_hi_rpm)
 
     def _decode(self, action):
-        """Raw [-1,1]^3 -> (duty, w_low_rpm, period_s, w_hi_rpm), with the burst
-        speed solved from the fixed-mean constraint (never chosen)."""
+        """Raw [-1,1]^3 -> (duty, w_low_rpm, period_s, w_hi_rpm).
+
+        Both modes convert a LOW speed to the burst with the same mean-
+        preserving formula w_hi = (mean - (1-D)*w_low) / D. Free-mean mode
+        (w_b is None): a1 chooses the nominal mean w_nom per block, w_low is
+        pinned at idle_min. Fixed-mean mode: a1 chooses the idle speed and the
+        mean is the fixed w_b."""
         a = np.clip(np.asarray(action, dtype=float).ravel(), -1.0, 1.0)
         duty = self.duty_min + 0.5 * (a[0] + 1.0) * (self.duty_max - self.duty_min)
-        w_low = self.idle_min + 0.5 * (a[1] + 1.0) * (self.idle_max - self.idle_min)
         period = float(np.exp(
             self._logTmin + 0.5 * (a[2] + 1.0) * (self._logTmax - self._logTmin)))
-        w_hi = (self.w_b - (1.0 - duty) * w_low) / duty
+        if self.w_b is None:
+            w_low = self.idle_min
+            w_nom = self.nom_min + 0.5 * (a[1] + 1.0) * (self.nom_max - self.nom_min)
+        else:
+            w_low = self.idle_min + 0.5 * (a[1] + 1.0) * (self.idle_max - self.idle_min)
+            w_nom = self.w_b
+        w_hi = (w_nom - (1.0 - duty) * w_low) / duty
         return float(duty), float(w_low), period, float(w_hi)
 
     def _block_motor_power(self, pts, t0):

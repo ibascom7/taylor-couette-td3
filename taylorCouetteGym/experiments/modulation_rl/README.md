@@ -40,10 +40,11 @@ modulation beat the best static waveform?**
 | dim | decodes to | range | note |
 | --- | --- | --- | --- |
 | a0 | duty D | [0.6, 1.0] | linear map |
-| a1 | idle speed ω_low | [0, 300] rpm | linear map |
+| a1 | trough speed ω_low | [0, 300] rpm | linear map |
 | a2 | period T | [0.5, 5] s | **log map**: T = exp(ln0.5 + (a2+1)/2·ln10) |
 
-Burst speed is SOLVED from the fixed-mean constraint, never chosen:
+The agent chooses the TROUGH speed ω_low and the burst is CONVERTED from it
+via the fixed-mean constraint, never chosen:
 **ω_hi = (w_b − (1−D)·ω_low) / D**, with w_b = 300 rpm. This guarantees every
 block's time-average speed is exactly w_b (equal bearing power ≈ equal motor
 power across ALL admissible actions — the reward is therefore effectively pure
@@ -57,8 +58,12 @@ consume the waveform, and CFD timesteps resolve the cycle only marginally. The
 measured payoff plateau is T ≤ 2.5 s; the step sits between 5 and 2.5 s (idle
 crossing the 0.6 s swirl-decay time — `results_td3_prep/period_scan_wb300_D80.png`).
 
-Known degeneracies (tolerated): D = 1 makes a1, a2 meaningless; ω_low = 300
-makes D, T meaningless (both decode to constant-300).
+Known degeneracies (tolerated — s0–v4 proved corner-pinning is a learner
+pathology, not a property of the corners): D = 1 makes a1, a2 meaningless;
+ω_low = 300 makes D, T meaningless (both decode to constant-300).
+
+(The env also carries an EXPERIMENTAL free-mean mode, `w_b_rpm=None`, where
+a1 becomes a per-block nominal speed — not used by this experiment's runs.)
 
 ## Observation space (7-D, at each block boundary)
 
@@ -195,3 +200,48 @@ w_hi rpm) plus `params_per_step.npy` `[episode, step, (duty, w_low_rpm,
 period_s, w_hi_rpm)]` and `td3_tc_t<N>` / `td3_tc_final` checkpoints.
 Warm-starting the buffer from the static-grid episodes (spec §Training
 mechanics) is NOT implemented yet — v1 trains from scratch.
+
+---
+
+## v5 (2026-07-21): the FREE-MEAN action space
+
+History that led here (full detail in the run analyses + memory notes):
+
+- **s0/v2/v3/v4 all failed the same way**: the actor pinned the raw action
+  corner (−1, +1, +1) regardless of what it decoded to, ending BELOW its own
+  random-exploration baseline every time.
+- **Terminal-bootstrap bug (found via v3, fixed 2026-07-21)**: episodes end by
+  truncation but the buffer stored done = float(terminated) = 0, so the critic
+  bootstrapped into clock = 1 states that never occur as source states →
+  ungrounded Q (probed: 0.78 where truth = 0), free value drift. Real, proven
+  (v3's actor saturated its DEAD idle dim), fixed in all three trainers — but
+  v4 showed it was not the sole driver.
+- **The remaining driver is signal size**: the fixed-mean design's equal-power
+  constraint compressed the whole (D, T) reward landscape to ~0.015 — below
+  the fitting error of a fresh critic at ~1.5k transitions / ~500 grad steps.
+  The seed-0 critic's arbitrary initial action-gradient picks a corner; tanh
+  saturation locks it within ~300 actor updates. Same seed → same corner.
+
+**DECISION: the action space STAYS fixed-mean at w_b = 300** (trough ω_low,
+duty D, period T; burst converted via the constraint — the original spec
+above). The failures were learner pathologies, not action-space properties,
+so the fix happens in the learner, validated locally before any more Carya
+time. (The env additionally gained an experimental free-mean mode,
+`w_b_rpm=None`, where a1 is a per-block nominal speed — implemented, decode-
+verified, unused by the runs.)
+
+**GATE (run 2026-07-22, `surrogate/REPORT.md` + `utd128.log`)**: the surrogate
+(6,600 real block-samples, fidelity-checked) reproduced the Carya failure
+exactly at the old recipe (10/10 seeds pinned; one seed replicated the real
+endpoint 0.8506 to 4 decimals) and localized the fault to the LEARNER BUDGET.
+UTD sweep, pass = within 0.01 of the grid-scan optimum (0.9641):
+UTD=1 → 0/10 · UTD=32 → 5–6/10 · **UTD=64 → 7/10 (+1 at 0.950)** ·
+UTD=128 → 5/10 (worse; overfits each incoming batch). Decision:
+`--grad_per_step 64` (free wall-clock on Carya — the learner idles during
+CFD), seed 0 (passes at UTD=64 on the surrogate). The strict ≥8/10 bar was
+not met by UTD alone (best combined recipe so far: +BC α=0.05 kills hard
+pinning but drags 3/10 to mediocre interiors); accepted residual risk ~2/10 =
+the constant-300 trap, which is identifiable in the log within ~50 policy
+episodes → abort early, keep the data (the trainer now persists
+`replay_buffer.npz` at every checkpoint, so every run doubles as an offline
+dataset).
