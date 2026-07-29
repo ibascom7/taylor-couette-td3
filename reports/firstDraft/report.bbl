@@ -8,31 +8,41 @@ Theodore~L Bergman, Adrienne~S Lavine, Frank~P Incropera, and David~P DeWitt.
 \bibitem{fujimoto2018addressing}
 Scott Fujimoto, Herke Hoof, and David Meger.
 \newblock Addressing function approximation error in actor-critic methods.
-\newblock In {\em International conference on machine learning}, pages 1587--1596. PMLR, 2018.
+\newblock In {\em International conference on machine learning}, pages
+  1587--1596. PMLR, 2018.
 
 \bibitem{lee2023turbulence}
 Taehyuk Lee, Junhyuk Kim, and Changhoon Lee.
-\newblock Turbulence control for drag reduction through deep reinforcement learning.
+\newblock Turbulence control for drag reduction through deep reinforcement
+  learning.
 \newblock {\em Physical Review Fluids}, 8(2):024604, 2023.
 
 \bibitem{lopez2024process}
-Enrique~A L{\'o}pez-Guajardo, Renato Galluzzi, Fernando Delgado-Licona, and Ruben Morales-Menendez.
-\newblock Process intensification of a catalytic-wall taylor-couette reactor through unconventional modulation of its angular speed.
+Enrique~A L{\'o}pez-Guajardo, Renato Galluzzi, Fernando Delgado-Licona, and
+  Ruben Morales-Menendez.
+\newblock Process intensification of a catalytic-wall taylor-couette reactor
+  through unconventional modulation of its angular speed.
 \newblock {\em Chemical Engineering Journal}, 489:151174, 2024.
 
 \bibitem{towers2024gymnasium}
-Mark Towers, Ariel Kwiatkowski, Jordan Terry, John~U Balis, Gianluca De~Cola, Tristan Deleu, Manuel Goul{\~a}o, Andreas Kallinteris, Markus Krimmel, Arjun KG, et~al.
-\newblock Gymnasium: A standard interface for reinforcement learning environments.
+Mark Towers, Ariel Kwiatkowski, Jordan Terry, John~U Balis, Gianluca De~Cola,
+  Tristan Deleu, Manuel Goul{\~a}o, Andreas Kallinteris, Markus Krimmel, Arjun
+  KG, et~al.
+\newblock Gymnasium: A standard interface for reinforcement learning
+  environments.
 \newblock {\em arXiv preprint arXiv:2407.17032}, 2024.
 
 \bibitem{weller1998openfoam}
 H.~G. Weller, G.~Tabor, H.~Jasak, and C.~Fureby.
-\newblock A tensorial approach to computational continuum mechanics using object-oriented techniques.
+\newblock A tensorial approach to computational continuum mechanics using
+  object-oriented techniques.
 \newblock {\em Computers in Physics}, 12(6):620--631, 1998.
 
 \bibitem{zhou2025deep}
 Zisong Zhou and Xiaojue Zhu.
-\newblock Deep reinforcement learning control unlocks enhanced heat transfer in turbulent convection.
-\newblock {\em Proceedings of the National Academy of Sciences}, 122(37):e2506351122, 2025.
+\newblock Deep reinforcement learning control unlocks enhanced heat transfer in
+  turbulent convection.
+\newblock {\em Proceedings of the National Academy of Sciences},
+  122(37):e2506351122, 2025.
 
 \end{thebibliography}

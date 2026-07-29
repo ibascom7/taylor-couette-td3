@@ -1,30 +1,72 @@
 \relax 
 \citation{lopez2024process}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Abstract}{1}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Introduction}{1}{}\protected@file@percent }
 \citation{lopez2024process}
-\citation{weller1998openfoam}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{}\protected@file@percent }
+\citation{lee2023turbulence}
+\citation{zhou2025deep}
+\citation{lopez2024process}
 \citation{towers2024gymnasium}
+\citation{fujimoto2018addressing}
+\citation{lopez2024process}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Methodology}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Reactor model}{2}{}\protected@file@percent }
+\citation{weller1998openfoam}
+\citation{bergman2011fundamentals}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Geometry of the catalytic-wall Taylor-Couette reactor. The computational domain is a $5^\circ $ azimuthal wedge of the full annulus, with a one-cell side-outlet band at the bottom of the outer wall.\newline  }}{3}{}\protected@file@percent }
+\newlabel{tab:geometry}{{1}{3}{}{}{}}
+\citation{lopez2024process}
+\citation{lopez2024process}
+\citation{towers2024gymnasium}
+\citation{fujimoto2018addressing}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Rotation waveforms and motor power}{4}{}\protected@file@percent }
+\newlabel{eq:fixedmean}{{5}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Reinforcement-learning formulation}{4}{}\protected@file@percent }
+\citation{lopez2024process}
+\citation{lopez2024process}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Static modulation beats constant rotation}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Constructing a benchmark stronger than the paper's.}{5}{}\protected@file@percent }
+\citation{lopez2024process}
+\citation{lopez2024process}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The static benchmark atlas (short reactor): conversion vs.\ episode-average motor power for constant rotation and eight pulsed waveform families (point labels = nominal speed $w_b$ in rpm). The paper's original configuration ($T = 25$ s, $D = 20\%$, dotted) is the weakest family on this geometry; high-duty, short-period families ($D = 70$--$80\%$, $T = 10$ s) form the low-power frontier.}}{6}{}\protected@file@percent }
+\newlabel{fig:atlas}{{1}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}TD3 learns a state-dependent schedule that beats the static champion}{6}{}\protected@file@percent }
+\citation{lopez2024process}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Period refinement at the best duty ($w_b = 300$ rpm, $D = 80\%$): conversion is flat for $T \leq 2.5$ s and drops sharply once the idle phase ($0.2\,T$) exceeds the $\sim $0.6 s vortex-relaxation time. $T = 2.5$ s is the static champion.}}{7}{}\protected@file@percent }
+\newlabel{fig:period}{{2}{7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Pulsed ($D = 80\%$, $T = 10$ s) vs.\ constant rotation at equal nominal speed. $X$ = mean outlet conversion over the last full period of the episode; $R = X - P/P_{\max }$. Short reactor: 50 s episodes; full-height: 300 s episodes.\newline  }}{7}{}\protected@file@percent }
+\newlabel{tab:static}{{2}{7}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Recreation of Fig.~7 of Ref.~\cite  {lopez2024process} on the full-height ($\Gamma = 30$) reactor with resolved $Sc = 1075$ film physics: conversion vs.\ nominal speed for pulsed ($D = 80\%$, $T = 10$ s) and constant rotation. Pulsation wins at every speed and saturates the reactor's practical ceiling at roughly half the nominal speed.}}{8}{}\protected@file@percent }
+\newlabel{fig:fig7}{{3}{8}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Deterministic evaluation on the short reactor (50 s episodes, $X$ over $[40, 50]$ s, all at commanded mean 300 rpm $\approx 3.7$ W).\newline  }}{8}{}\protected@file@percent }
+\newlabel{tab:eval}{{3}{8}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Zero-shot transfer to the full-height reactor}{8}{}\protected@file@percent }
+\citation{lopez2024process}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces TD3 training on the short reactor (three seeds; 44 parallel CFD workers per seed, 308 episodes each). Horizontal lines mark the constant-300 baseline, the static champion ($R = 0.270$--$0.275$), and the $R = 0.28$ discovery threshold.}}{9}{}\protected@file@percent }
+\newlabel{fig:training}{{4}{9}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Discussion}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Mechanism.}{9}{}\protected@file@percent }
+\citation{lopez2024process}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces The head-to-head comparison: the deterministic TD3 policy (red dot) on the static benchmark atlas of Fig.~\ref {fig:atlas}. At equal power ($3.71$ W) it clears the static champion (gold star, $D = 80\%$, $T = 2.5$ s) by $+0.014$ conversion --- beyond the $\pm 0.01$ noise floor --- and sits above every static waveform family tested.}}{10}{}\protected@file@percent }
+\newlabel{fig:atlas_td3}{{5}{10}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{The harvest is a finite-horizon effect.}{10}{}\protected@file@percent }
+\citation{lopez2024process}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Deterministic evaluation of the learned policy on the short reactor. Left: outlet conversion vs.\ time against the static references. Right: the commanded speed --- spin-up, fast shimmy, deep renewal, and constant harvest.}}{11}{}\protected@file@percent }
+\newlabel{fig:eval}{{6}{11}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Transfer to the full-height reactor (300 s episodes, $X$ over the final 10 s window, equal power $\approx 3.7$--$3.8$ W). References are the static sweep of Fig.~\ref {fig:fig7} at $w_b = 300$ rpm.\newline  }}{11}{}\protected@file@percent }
+\newlabel{tab:transfer}{{4}{11}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Future work.}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusions}{11}{}\protected@file@percent }
 \bibstyle{plain}
 \bibdata{references}
 \bibcite{bergman2011fundamentals}{1}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{2}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Formulation}{2}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Geometry of the catalytic-wall Taylor-Couette reactor. The computational domain is a $5^\circ $ azimuthal wedge of the full annulus, with a one-cell side-outlet band at the bottom of the outer wall.\newline  }}{2}{}\protected@file@percent }
-\newlabel{tab:geometry}{{1}{2}{}{}{}}
 \bibcite{fujimoto2018addressing}{2}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Zero-shot transfer (stretch clock). Top: conversion vs.\ time against the full-height static references. Bottom: the per-block decoded actions --- the learned program dilates gracefully: shimmy through mid-episode, then a continuous glide into harvest (duty $0.63 \rightarrow 0.97$) as the clock approaches 1.}}{12}{}\protected@file@percent }
+\newlabel{fig:transfer}{{7}{12}{}{}{}}
 \bibcite{lee2023turbulence}{3}
 \bibcite{lopez2024process}{4}
 \bibcite{towers2024gymnasium}{5}
 \bibcite{weller1998openfoam}{6}
 \bibcite{zhou2025deep}{7}
-\citation{lopez2024process}
-\citation{fujimoto2018addressing}
-\citation{lee2023turbulence}
-\citation{zhou2025deep}
-\citation{bergman2011fundamentals}
-\citation{towers2024gymnasium}
-\citation{weller1998openfoam}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{3}{}\protected@file@percent }
-\gdef \@abspage@last{3}
+\gdef \@abspage@last{13}

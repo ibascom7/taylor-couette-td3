@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{booktabs}
 
 \title{Process intensification of catalytic-wall Taylor-Couette reactors by reinforcement learning}
@@ -11,21 +12,90 @@
 
 \maketitle
 
-\section{Abstract}
-Previous work intensified reactions in catalytic-wall Taylor-Couette reactors by modulating the angular velocity of the reactor's inner cylinder, saving a considerable amount of energy~\cite{lopez2024process}.
-Here we extend their methods by creating a RL system that chooses unconventional modulation strategies that requires less energy than previous benchmark policies.
+\begin{abstract}
+L\'opez-Guajardo et al.~\cite{lopez2024process} showed that pulsating the angular
+speed of the inner cylinder of a catalytic-wall Taylor-Couette reactor increases
+conversion relative to constant rotation at the same nominal speed, delivering
+process intensification without new hardware. We extend that idea from fixed,
+hand-designed waveforms to \emph{state-dependent} modulation discovered by
+reinforcement learning (RL). A resolved-film CFD model of the reactor
+(OpenFOAM, Schmidt number $Sc = 1075$, $25\,\mu$m wall cells) is wrapped in a
+Gymnasium environment in which a TD3 agent re-parameterizes the rotation
+waveform every 10 s under a fixed-mean-speed constraint, making every policy an
+equal-power competitor by construction. The trained agent beats the best static
+waveform found by grid search on the training geometry ($R = X - P/P_{\max}$ of
+$0.289$ vs.\ $0.275$; conversion $0.406$ vs.\ $0.392$ at $3.7$ W), using an
+interpretable schedule: spin-up, fast ``film-renewal shimmy'', deep slow
+pulses, and a terminal constant-speed harvest. Deployed zero-shot on the
+full-height reactor ($\Gamma = 30$, five times the residence time of the
+training geometry), the same policy reaches a final-window conversion of
+$0.902$, beating both constant rotation ($0.787$) and the best static pulse
+($0.876$) at equal power. We also show that part of the learned advantage is a
+finite-horizon ``batch'' effect, quantify the sustainable component, and
+discuss what changes are needed to optimize continuous steady-state operation.
+\end{abstract}
 
 \section{Introduction}
-Process intensification tends to be an expensive endeavor implying replacing old equipment with new and improved ones. 
-Here we offer a treat giving you similar scale of improvement without asking for your company credit score.
-Taylor-Couette reactors are super predictable and consistent so they have become very popular in industrial processes such as crystallization, electrolysis, and catalysis. 
+Process intensification usually means replacing equipment; modulating the
+operation of equipment already in place is far cheaper. Taylor-Couette (TC)
+reactors --- the annular gap between a rotating inner cylinder and a fixed
+outer cylinder --- offer predictable, tunable vortex flow and are used
+industrially in crystallization, electrolysis, and catalysis. When the outer
+wall is catalytic, overall conversion is limited by mass transfer of reactant
+across the concentration boundary layer at that wall. L\'opez-Guajardo et
+al.~\cite{lopez2024process} demonstrated, in simulation, that
+\emph{unconventional modulation} of the inner-cylinder speed --- square-wave
+pulsation about a nominal speed $w_b$ --- thins and renews this boundary layer
+and can raise conversion at essentially the same (or lower) motor energy than
+constant rotation.
 
-\newpage
+Fixed waveforms are only a small corner of the modulation design space: the
+duty cycle, period, and depth of pulsation could in principle vary in time and
+respond to the state of the flow. Deep reinforcement learning has recently
+proven able to discover non-obvious control strategies in fluid systems,
+including turbulent drag reduction~\cite{lee2023turbulence} and enhanced heat
+transfer in convection~\cite{zhou2025deep}. Here we ask the analogous question
+for catalytic TC reactors: \textbf{can state-dependent, learned modulation beat
+the best static waveform at equal power?}
+
+Our contributions are:
+\begin{enumerate}
+  \item a resolved-film CFD benchmark of the pulsed-vs-constant effect of
+        Ref.~\cite{lopez2024process} on both a short ($\Gamma = 6$) and the
+        full-height ($\Gamma = 30$) reactor geometry --- a grid over the full
+        waveform family on the conversion-vs-power plane --- confirming that
+        pulsation beats constant rotation, that the advantage grows
+        substantially in the tall reactor, and identifying a static champion
+        waveform substantially stronger than the paper's own configuration;
+  \item a Gymnasium~\cite{towers2024gymnasium} RL environment in which a TD3
+        agent~\cite{fujimoto2018addressing} chooses block-wise waveform
+        parameters under a fixed-mean-speed (equal-power) constraint, together
+        with the training fixes (terminal bootstrapping, high update-to-data
+        ratio) required to make TD3 converge on a few thousand expensive CFD
+        transitions;
+  \item a learned policy that beats the static champion on the training
+        geometry and transfers zero-shot to the full-height reactor, where it
+        outperforms every static waveform tested; and
+  \item an analysis separating the sustainable part of the learned gain from a
+        finite-horizon ``harvest'' effect, with implications for applying
+        episodic RL to continuously-operated process equipment.
+\end{enumerate}
+
 \section{Methodology}
-\subsection{Problem Formulation}
-    For the sake of knowing whether our RL approach outperforms Lopez-Guajardo et al.~\cite{lopez2024process}, 
-    our formulation closely follows theirs. The Taylor-Couette reactor
-    geometry is summarized in Table~\ref{tab:geometry}.
+
+\subsection{Reactor model}
+For the sake of knowing whether our RL approach outperforms the static
+waveforms of L\'opez-Guajardo et al.~\cite{lopez2024process}, our formulation
+closely follows theirs. The reactor geometry is summarized in
+Table~\ref{tab:geometry}. Two variants are used: a \emph{short} reactor
+($H = 38.1$ mm, $\Gamma = 6$), one fifth of the paper's height, which keeps RL
+training affordable; and the \emph{full-height} reactor of the paper
+($H = 190.5$ mm, $\Gamma = 30$), used as a transfer target. The computational
+domain is a $5^\circ$ azimuthal wedge of the annulus. Fresh reactant enters
+through the top annular face and leaves through a one-cell side-outlet band at
+the bottom of the outer wall; at a feed rate of 100 mL/min the mean residence
+time is $\tau \approx 26$ s in the short reactor and $\approx 130$ s in the
+full-height one.
 
 \begin{table}[ht]
     \centering
@@ -39,9 +109,9 @@ Taylor-Couette reactors are super predictable and consistent so they have become
         Inner cylinder radius   & $R_i$          & $25.40$ mm \\
         Outer cylinder radius   & $R_o$          & $31.75$ mm \\
         Gap width               & $d = R_o - R_i$ & $6.35$ mm \\
-        Reactor height          & $H$            & $38.10$ mm \\
+        Reactor height (short / full) & $H$      & $38.10$ / $190.5$ mm \\
         Radius ratio            & $\eta = R_i/R_o$ & $0.80$ \\
-        Aspect ratio            & $\Gamma = H/d$ & $6.0$ \\
+        Aspect ratio (short / full) & $\Gamma = H/d$ & $6.0$ / $30$ \\
         Side-outlet band height & $h_\mathrm{out}$ & $0.42$ mm \\
         Azimuthal wedge angle   & $\theta$       & $5^\circ$ \\
         \bottomrule
@@ -50,35 +120,411 @@ Taylor-Couette reactors are super predictable and consistent so they have become
 
 The incompressible Navier-Stokes equations
 \begin{align}
-    \rho \nabla \cdot \mathbf{u} &= 0, \\
+    \nabla \cdot \mathbf{u} &= 0, \\
     \rho \left( \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u} \right) &= -\nabla p + \mu \nabla^2 \mathbf{u},
 \end{align}
-
-and the transport of dilute species equation
+and the transport equation for the dilute reactant concentration $c$
 \begin{align}
     \frac{\partial c}{\partial t} + \mathbf{u} \cdot \nabla c &= D \nabla^2 c,
 \end{align}
+were solved by the finite-volume method in OpenFOAM
+v2506~\cite{weller1998openfoam} (transient \texttt{pimpleFoam} with a passive
+scalar, adaptive time stepping at a Courant limit of 1.8). The working fluid is
+a silicone-oil-like liquid ($\nu = 1.075\times10^{-5}$ m$^2$/s,
+$\rho = 930$ kg/m$^3$) carrying a reactant with molecular diffusivity
+$D = 1\times10^{-8}$ m$^2$/s, giving a Schmidt number $Sc = \nu/D = 1075$. The
+feed concentration is $c_0 = 50$ mmol/m$^3$.
 
-were solved by FVM with the OpenFOAM v2506~\cite{weller1998openfoam} framework.
+The catalytic outer wall is modeled as a perfect sink, $c = 0$, so consumption
+is limited by molecular diffusion across the concentration boundary layer ---
+the mass-transfer-limited regime~\cite{bergman2011fundamentals}. At
+$Sc \sim 10^3$ this layer is far thinner than the momentum boundary layer, so
+the mesh is graded radially to a $25\,\mu$m first cell at the outer wall
+(3{,}330 cells for the short reactor, 16{,}650 for the full-height one),
+resolving the film \emph{directly}, with no wall-function or Sherwood-number
+closure. The rotating inner wall imposes solid-body azimuthal velocity
+$u_\theta = \omega R_i$; the Reynolds number $Re = \omega R_i d / \nu$ ranges
+from $\approx 160$ at 100 rpm to $\approx 790$ at the strongest bursts used by
+the RL agent (500 rpm), and the flow is treated as laminar.
 
+The performance metric is the outlet conversion
+\begin{align}
+    X = 1 - \frac{\bar{c}_\mathrm{out}}{c_0},
+\end{align}
+where $\bar{c}_\mathrm{out}$ is the flux-weighted (cup-mixing) mean
+concentration over the side outlet, sampled every 0.1 s.
 
-The Reynolds number was defined as $Re = \frac{\omega R_i d}{\nu}$, 
-where $\omega$ is the angular velocity of the inner cylinder and $\nu$ is the kinematic viscosity of the fluid. 
-The flow was assumed to be laminar and incompressible, 
-and the no-slip boundary condition was applied at both cylinder walls.
+\subsection{Rotation waveforms and motor power}
+The inner-cylinder speed follows the square-pulse family of
+Ref.~\cite{lopez2024process}: bursts at $\omega_{hi}$ for a fraction $D$ (duty
+cycle) of each period $T$, and a trough speed $\omega_{low}$ for the remainder,
+with 0.05 s ramped edges. Given a nominal (time-mean) speed $w_b$, the burst
+speed is \emph{solved} from the mean constraint
+\begin{align}
+    \omega_{hi} = \frac{w_b - (1 - D)\,\omega_{low}}{D},
+    \label{eq:fixedmean}
+\end{align}
+so every waveform in the family has the same commanded time-average speed.
+Motor electrical power $P$ is evaluated on the commanded $\omega(t)$ with the
+motor model of Ref.~\cite{lopez2024process} (their Eqs.~18--23), densified at
+100 Hz; because of Eq.~\eqref{eq:fixedmean}, all waveforms at the same $w_b$
+draw nearly identical power ($\approx 3.7$ W at $w_b = 300$ rpm), which makes
+every comparison in this work an \emph{equal-power} comparison. Power is
+normalized by $P_{\max} = 31.94$ W, the motor power at 2500 rpm, the fastest
+burst ever commanded.
 
-The Farama Foundation's Gymnasium~\cite{towers2024gymnasium}
-was used as the framework for our reinforcement learning (RL) environment with 
+\subsection{Reinforcement-learning formulation}
+The CFD solver is wrapped in a Gymnasium~\cite{towers2024gymnasium}
+environment. An episode is 50 s of reactor operation from a pristine
+pre-filled initial condition ($c = c_0$ everywhere, fluid at rest), divided
+into five 10 s control blocks. At each block boundary the agent picks a
+3-dimensional action, decoded to waveform parameters held for that block:
+duty $D \in [0.6, 1]$ (linear map), trough speed
+$\omega_{low} \in [0, 300]$ rpm (linear map), and period
+$T \in [0.5, 5]$ s (logarithmic map). The nominal speed is fixed at
+$w_b = 300$ rpm and the burst follows Eq.~\eqref{eq:fixedmean}, capping bursts
+at 500 rpm. The wave phase resets at each block boundary (every block opens
+with a burst), a structural prior that keeps the commanded waveform fully
+determined by the action.
 
+The observation at each block boundary is 7-dimensional: the block-averaged
+catalytic wall flux (normalized; the fast film-state signal), the change in
+conversion over the last block, the block-averaged conversion itself, the
+episode clock $t/50$ s, and the previous raw action. All flow observables are
+block \emph{averages}, never point samples, which suppresses aliasing of the
+$\pm 0.02$ outlet flutter. The per-block reward is
+\begin{align}
+    R_\mathrm{block} = X_\mathrm{block} - \frac{P_\mathrm{block}}{P_{\max}},
+\end{align}
+whose final-block value for a static policy equals the benchmark score
+$R = X_{[40,50]} - P/P_{\max}$ used throughout, so learned and static policies
+are directly comparable.
+
+The agent is TD3~\cite{fujimoto2018addressing} (two 400$\times$300 ReLU
+critics, delayed actor, target smoothing; discount $0.99$, soft-update
+$\tau = 0.005$, exploration noise $0.2$ per raw action dimension). Because one
+environment step costs $\sim$8 CPU-minutes of CFD, training is parallelized:
+44 workers on one 48-core HPC node, each running its own OpenFOAM case,
+feed a single shared replay buffer while one learner trains the policy
+(308 episodes = 1{,}540 transitions per seed; the first 200 episodes are
+uniform-random exploration). Two fixes proved essential at this data scale.
+First, episodes end by \emph{truncation} at the fixed horizon, and the stored
+done-flag must terminate the value bootstrap there: bootstrapping into
+end-of-episode states that never occur as source states lets the critic drift
+and drags the actor into action-space corners (observed in four failed runs).
+Second, the default one gradient step per collected transition badly underfits
+the critic at $\sim$1{,}500 transitions; an update-to-data ratio of 64,
+selected on a surrogate model fitted to 6{,}600 real CFD transitions,
+raised the surrogate convergence rate from 0/10 seeds to 7/10. With both fixes,
+two of three real-CFD seeds converged; all results below use the best seed,
+evaluated deterministically (exploration noise off) on a fresh case.
 
 \section{Results}
 
+\subsection{Static modulation beats constant rotation}
+Table~\ref{tab:static} summarizes the pulsed-vs-constant sweeps
+(the recreation of Fig.~7 of Ref.~\cite{lopez2024process}) with resolved
+$Sc = 1075$ film physics. On the short reactor the paper's effect is
+reproduced but modest: at $w_b = 300$ rpm the $D = 80\%$, $T = 10$ s pulse
+gains $+0.034$ conversion over constant rotation. A scan over the static
+$(D, T)$ family found the best fixed waveform (the ``static champion'') at
+$D = 80\%$, $T = 2.5$ s: $X = 0.392$, $R = 0.275$.
+
+\paragraph{Constructing a benchmark stronger than the paper's.}
+A claim of ``beating the benchmarks'' is only as strong as the benchmark, so
+we state precisely what the RL agent is compared against and why. All policies
+--- constant, pulsed, and learned --- are scored on the same
+conversion-vs-motor-power plane: the same solver and mesh, the same conversion
+metric (flux-weighted outlet mean over the last full period), and the same
+motor model of Ref.~\cite{lopez2024process} evaluated on the commanded
+$\omega(t)$. On this plane ``$A$ beats $B$'' has an unambiguous meaning: more
+conversion at equal or lower power.
+
+We first recreated the paper's own headline waveform --- $D = 20\%$,
+$T = 25$ s, i.e.\ 5 s bursts at $5 w_b$ --- on the short reactor. It
+\emph{loses} to constant rotation at every nominal speed and every power
+(the lowest curve in Fig.~\ref{fig:atlas}): with $\tau / T \approx 1$, a fluid
+parcel transits the reactor within about one pulse period, so the 20 s idle
+phases starve the outlet faster than the bursts can compensate.
+This is a geometry effect, not a contradiction of the paper --- the same
+waveform family wins handily in the tall reactor's amortization regime
+(Fig.~\ref{fig:fig7}) --- but it means the literal paper configuration would
+be a strawman benchmark on the training geometry. We therefore built a
+stronger one: a grid over the whole waveform family, duty $15$--$80\%$,
+period $1.25$--$25$ s, and nominal speed $100$--$500$ rpm
+(Fig.~\ref{fig:atlas}). The grid shows that duty --- not burst height --- is
+the dominant knob: the high-duty, short-idle families ($D = 70$--$80\%$,
+$T = 10$ s) dominate the low-power frontier, while the paper's deep 20\% duty
+is the worst family tested. Refining the period at the best duty
+(Fig.~\ref{fig:period}) reveals a payoff plateau for $T \leq 2.5$ s: at
+$D = 80\%$ the idle phase must stay shorter than the $\sim$0.6 s
+vortex-relaxation time of the gap, or the film regrows between bursts. The
+frontier point at $w_b = 300$ rpm --- $D = 80\%$, $T = 2.5$ s, $X = 0.392$,
+$R = 0.275$ --- is the \emph{static champion} against which all RL results
+are held. Beating it is a strictly harder test than beating the published
+waveform.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.92\linewidth]{figures/atlas_static.png}
+    \caption{The static benchmark atlas (short reactor): conversion vs.\
+    episode-average motor power for constant rotation and eight pulsed
+    waveform families (point labels = nominal speed $w_b$ in rpm). The
+    paper's original configuration ($T = 25$ s, $D = 20\%$, dotted) is the
+    weakest family on this geometry; high-duty, short-period families
+    ($D = 70$--$80\%$, $T = 10$ s) form the low-power frontier.}
+    \label{fig:atlas}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.55\linewidth]{figures/period_scan_wb300_D80.png}
+    \caption{Period refinement at the best duty ($w_b = 300$ rpm,
+    $D = 80\%$): conversion is flat for $T \leq 2.5$ s and drops sharply once
+    the idle phase ($0.2\,T$) exceeds the $\sim$0.6 s vortex-relaxation time.
+    $T = 2.5$ s is the static champion.}
+    \label{fig:period}
+\end{figure}
+
+On the full-height reactor (Fig.~\ref{fig:fig7}) the advantage is much larger
+and universal: pulsation beats constant rotation at \emph{every} nominal speed,
+by up to $+0.092$ conversion, and pulsed conversion saturates at
+$\approx 0.877$ from $w_b \geq 300$ rpm while constant rotation is still
+climbing at 500 rpm. The mechanism is the amortization regime identified in
+the paper: with $\tau / T \approx 13$, each fluid parcel averages many pulse
+periods, so idle phases cannot starve the outlet while the bursts repeatedly
+renew the wall film. Notably, pulsed $w_b = 200$ rpm (2.52 W) out-converts
+constant 500 rpm (6.11 W) --- more conversion for 2.4$\times$ less power.
+
+\begin{table}[ht]
+    \centering
+    \caption{Pulsed ($D = 80\%$, $T = 10$ s) vs.\ constant rotation at equal
+    nominal speed. $X$ = mean outlet conversion over the last full period of
+    the episode; $R = X - P/P_{\max}$. Short reactor: 50 s episodes;
+    full-height: 300 s episodes.\newline}\label{tab:static}
+    \begin{tabular}{lrrrrrr}
+        \toprule
+        & \multicolumn{3}{c}{Short ($\Gamma = 6$)} & \multicolumn{3}{c}{Full ($\Gamma = 30$)} \\
+        \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+        $w_b$ [rpm] & $X_\mathrm{const}$ & $X_\mathrm{pulsed}$ & $\Delta X$
+                    & $X_\mathrm{const}$ & $X_\mathrm{pulsed}$ & $\Delta X$ \\
+        \midrule
+        100 & 0.258 & 0.272 & $+0.013$ & 0.689 & 0.711 & $+0.022$ \\
+        200 & 0.307 & 0.333 & $+0.026$ & 0.762 & 0.853 & $+0.092$ \\
+        300 & 0.340 & 0.374 & $+0.034$ & 0.787 & 0.876 & $+0.090$ \\
+        400 & 0.399 & 0.374 & $-0.024$ & 0.812 & 0.874 & $+0.063$ \\
+        500 & 0.392 & 0.396 & $+0.004$ & 0.828 & 0.877 & $+0.049$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.62\linewidth]{figures/fig7_full_tc.png}
+    \caption{Recreation of Fig.~7 of Ref.~\cite{lopez2024process} on the
+    full-height ($\Gamma = 30$) reactor with resolved $Sc = 1075$ film physics:
+    conversion vs.\ nominal speed for pulsed ($D = 80\%$, $T = 10$ s) and
+    constant rotation. Pulsation wins at every speed and saturates the
+    reactor's practical ceiling at roughly half the nominal speed.}
+    \label{fig:fig7}
+\end{figure}
+
+\subsection{TD3 learns a state-dependent schedule that beats the static champion}
+Figure~\ref{fig:training} shows the training curves of the three seeds. The
+best seed sustains a final-block reward above the pre-registered discovery
+threshold of $R = 0.28$ \emph{with exploration noise still on}; a second seed
+converges to the static-champion level; the third falls into a known shallow
+trap (near-constant rotation) and only partially recovers. No seed exhibits
+the corner-pinning failure of the unfixed learner.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/v5_learning_curves.png}
+    \caption{TD3 training on the short reactor (three seeds; 44 parallel CFD
+    workers per seed, 308 episodes each). Horizontal lines mark the
+    constant-300 baseline, the static champion ($R = 0.270$--$0.275$), and the
+    $R = 0.28$ discovery threshold.}
+    \label{fig:training}
+\end{figure}
+
+Evaluated deterministically, the learned policy earns $R = 0.289$ ---
+$X = 0.406$ at $3.71$ W --- beating the static champion by $+0.014$
+conversion at equal power, outside the measured $\pm 0.01$ chaos noise floor
+of the environment (Table~\ref{tab:eval}, Fig.~\ref{fig:eval}).
+Figure~\ref{fig:atlas_td3} places this result on the benchmark atlas of
+Fig.~\ref{fig:atlas}: the learned policy sits \emph{above the entire static
+cloud} --- every duty, every period, every nominal speed tested, including
+the champion at the same abscissa --- at a power below that of any static
+policy of comparable conversion (constant 400 rpm reaches $X = 0.399$ but
+costs $4.92$ W, 33\% more). Because the fixed-mean constraint pins the
+commanded mean at 300 rpm, this is not a power-for-conversion trade: the gain
+comes entirely from \emph{when} the modulation is applied. This is the sense
+in which the RL agent beats the benchmarks of
+Ref.~\cite{lopez2024process}: not merely their published waveform (which the
+static grid already dominates on this geometry), but the best member of
+their entire waveform family, re-tuned specifically for this reactor. The strategy
+is interpretable and genuinely state-dependent rather than a single waveform:
+(i) a gentle spin-up block ($D = 0.92$, trough 31 rpm, $T = 4.4$ s);
+(ii--iii) a hard, fast ``shimmy'' ($D \approx 0.6$, trough 0, $T = 0.5$--$0.8$ s,
+bursts to $\approx 490$ rpm) while conversion builds; (iv) one slow, deep
+renewal pulse ($T = 5$ s); and (v) a final \emph{constant}-300 ``harvest''
+block ($D = 1$).
+
+\begin{table}[ht]
+    \centering
+    \caption{Deterministic evaluation on the short reactor (50 s episodes,
+    $X$ over $[40, 50]$ s, all at commanded mean 300 rpm $\approx 3.7$ W).\newline}\label{tab:eval}
+    \small
+    \begin{tabular}{lrrr}
+        \toprule
+        policy & $X$ & $P$ [W] & $R = X - P/P_{\max}$ \\
+        \midrule
+        constant 300 rpm                    & 0.340 & 3.74 & 0.223 \\
+        pulsed $D{=}80\%$, $T{=}10$ s       & 0.374 & 3.70 & 0.259 \\
+        pulsed $D{=}80\%$, $T{=}2.5$ s (static champion) & 0.392 & 3.72 & 0.275 \\
+        \textbf{TD3 (best seed, deterministic)} & \textbf{0.406} & 3.71 & \textbf{0.289} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.92\linewidth]{figures/atlas_with_td3.png}
+    \caption{The head-to-head comparison: the deterministic TD3 policy (red
+    dot) on the static benchmark atlas of Fig.~\ref{fig:atlas}. At equal
+    power ($3.71$ W) it clears the static champion (gold star,
+    $D = 80\%$, $T = 2.5$ s) by $+0.014$ conversion --- beyond the
+    $\pm 0.01$ noise floor --- and sits above every static waveform family
+    tested.}
+    \label{fig:atlas_td3}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.49\linewidth]{figures/eval_conversion_vs_time.png}
+    \includegraphics[width=0.49\linewidth]{figures/eval_omega_vs_time.png}
+    \caption{Deterministic evaluation of the learned policy on the short
+    reactor. Left: outlet conversion vs.\ time against the static references.
+    Right: the commanded speed --- spin-up, fast shimmy, deep renewal, and
+    constant harvest.}
+    \label{fig:eval}
+\end{figure}
+
+\subsection{Zero-shot transfer to the full-height reactor}
+The trained policy was then deployed, with no retraining, on the full-height
+($\Gamma = 30$) reactor in 300 s episodes (30 blocks). The only ambiguous
+input is the episode-clock observation; we tested the two natural deployments:
+\emph{stretch} (feed the native clock $t/300$: the learned 50 s program
+dilated 6$\times$) and \emph{wrap} (feed $(t \bmod 50)/50$: the program
+replayed cyclically). Table~\ref{tab:transfer} and
+Fig.~\ref{fig:transfer} give the outcome: both variants beat constant
+rotation decisively, and the stretch deployment beats \emph{every} static
+waveform measured on this reactor, at equal power.
+
+\begin{table}[ht]
+    \centering
+    \caption{Transfer to the full-height reactor (300 s episodes, $X$ over the
+    final 10 s window, equal power $\approx 3.7$--$3.8$ W). References are the
+    static sweep of Fig.~\ref{fig:fig7} at $w_b = 300$ rpm.\newline}\label{tab:transfer}
+    \begin{tabular}{lrrr}
+        \toprule
+        policy & $X$ & $P$ [W] & $R$ \\
+        \midrule
+        constant 300 rpm                          & 0.787 & 3.74 & 0.670 \\
+        pulsed $D{=}80\%$, $T{=}10$ s (best static @300) & 0.876 & 3.70 & 0.760 \\
+        TD3, wrap clock                           & 0.881 & 3.78 & 0.763 \\
+        \textbf{TD3, stretch clock}               & \textbf{0.902} & 3.78 & \textbf{0.783} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.55\linewidth]{figures/transfer_conversion_vs_time.png}\\
+    \includegraphics[width=0.55\linewidth]{figures/transfer_actions.png}
+    \caption{Zero-shot transfer (stretch clock). Top: conversion vs.\ time
+    against the full-height static references. Bottom: the per-block decoded
+    actions --- the learned program dilates gracefully: shimmy through
+    mid-episode, then a continuous glide into harvest (duty
+    $0.63 \rightarrow 0.97$) as the clock approaches 1.}
+    \label{fig:transfer}
+\end{figure}
+
+Two observations argue that the policy is using state feedback rather than
+replaying a memorized script. First, in the wrap deployment the clock
+repeatedly visits the value at which, in training, the policy always switched
+to its harvest block --- yet with conversion still climbing it declines to
+harvest and keeps shimmying. Second, in the stretch deployment the switch from
+shimmy to slow renewal and finally to harvest happens over blocks 19--30,
+re-timed to the tall reactor's much slower conversion transient, and the duty
+cycle rises \emph{continuously} toward 1 rather than jumping at its trained
+schedule position.
+
 \section{Discussion}
+
+\paragraph{Mechanism.} All gains are consistent with the boundary-layer
+renewal picture of Ref.~\cite{lopez2024process}: at $Sc \sim 10^3$ the
+concentration film at the catalytic wall is thin and easily starved; bursts
+re-thin it and stir fresh reactant to the wall, while the fixed-mean
+constraint means this costs no extra motor power. The learned policy improves
+on static pulsing mainly by \emph{phasing}: aggressive renewal while
+conversion is building, gentler deep pulses once the film approaches its
+renewed state, and no wasted modulation once further renewal cannot pay back
+before the horizon.
+
+\paragraph{The harvest is a finite-horizon effect.} The terminal constant-speed
+block deserves scrutiny. Training optimizes a fixed 50 s episode from a known
+start --- effectively a \emph{batch campaign} objective, with the episode clock
+observable --- so the rational endgame is to stop investing in future film
+state and cash out the flow state already built. The transfer runs expose this
+cleanly: constant-300 rotation \emph{sustains} only $X = 0.787$ on the tall
+reactor, so the $X = 0.902$ read while rotating near-constant in the final
+blocks is necessarily transient --- spent film capital, collectible once per
+campaign. The wrap deployment, whose clock never approaches the horizon, never
+harvests and \emph{sustains} $X \approx 0.88$; that ($\approx$ tied with the
+best static pulse, $+0.09$ over constant) is the honest steady-state value of
+the learned controller, while the additional $\approx +0.02$ is real but
+end-of-campaign-only. For batch-style operation the policy is correct as-is;
+optimizing continuous operation instead calls for a continuing-task
+formulation --- clock removed from the observation, soft resets or randomized
+long horizons, and bootstrapping at truncation --- or, without retraining,
+deploying with the clock frozen mid-program, which reproduces the sustained
+shimmy-renewal regime.
+
+\paragraph{Limitations.} The domain is a $5^\circ$ wedge, which suppresses
+non-axisymmetric azimuthal modes; the flow is assumed laminar throughout,
+reasonable at the operating $Re \lesssim 800$ but untested at the sweep's
+strongest bursts; episode metrics in the wavy regime carry a $\pm 0.01$
+reproducibility noise floor, so margins below that are not resolvable (the
+main claims clear it). The headline results come from one converged seed
+(one of three), evaluated deterministically; on the tall reactor the
+wall-flux observation exceeds its training normalization range by
+$\sim$60\%, which the policy tolerated but which was not designed for. Motor
+power is computed from the commanded waveform via the motor model of
+Ref.~\cite{lopez2024process}, not from a coupled electromechanical simulation.
+
+\paragraph{Future work.} Freeing the mean-speed constraint (the environment
+already supports a free-mean action space) would let the agent trade power
+against conversion directly; replicate evaluations and the remaining seeds
+would tighten the statistics; and a continuing-task retraining would target
+steady-state operation. On the experimental side, the policy's commanded
+waveforms are ordinary tabulated speed profiles, directly playable on the
+physical reactor of Ref.~\cite{lopez2024process}.
+
+\section{Conclusions}
+A TD3 agent, trained on a resolved-film CFD model of a catalytic-wall
+Taylor-Couette reactor under an equal-power constraint, discovered a
+state-dependent rotation-modulation schedule that beats the best static
+waveform on its training geometry ($R = 0.289$ vs.\ $0.275$) and, deployed
+zero-shot, on the full-height reactor ($X = 0.902$ vs.\ $0.876$ for the best
+static pulse and $0.787$ for constant rotation, all at $\approx 3.7$ W). The
+learned strategy is interpretable --- spin-up, fast film-renewal shimmy, deep
+slow pulses, terminal harvest --- and its advantage decomposes into a
+sustainable feedback component and a finite-horizon harvest component, a
+distinction that matters whenever episodic RL is applied to continuously
+operated process equipment.
 
 \bibliographystyle{plain}
 \bibliography{references}
-
-\nocite{lopez2024process,fujimoto2018addressing,lee2023turbulence,zhou2025deep,bergman2011fundamentals,towers2024gymnasium,weller1998openfoam}
-
 
 \end{document}
