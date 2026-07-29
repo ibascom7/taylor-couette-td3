@@ -1,0 +1,84 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+\title{Process intensification of catalytic-wall Taylor-Couette reactors by reinforcement learning}
+\author{Isaiah Bascom}
+\date{July 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Abstract}
+Previous work intensified reactions in catalytic-wall Taylor-Couette reactors by modulating the angular velocity of the reactor's inner cylinder, saving a considerable amount of energy~\cite{lopez2024process}.
+Here we extend their methods by creating a RL system that chooses unconventional modulation strategies that requires less energy than previous benchmark policies.
+
+\section{Introduction}
+Process intensification tends to be an expensive endeavor implying replacing old equipment with new and improved ones. 
+Here we offer a treat giving you similar scale of improvement without asking for your company credit score.
+Taylor-Couette reactors are super predictable and consistent so they have become very popular in industrial processes such as crystallization, electrolysis, and catalysis. 
+
+\newpage
+\section{Methodology}
+\subsection{Problem Formulation}
+    For the sake of knowing whether our RL approach outperforms Lopez-Guajardo et al.~\cite{lopez2024process}, 
+    our formulation closely follows theirs. The Taylor-Couette reactor
+    geometry is summarized in Table~\ref{tab:geometry}.
+
+\begin{table}[ht]
+    \centering
+    \caption{Geometry of the catalytic-wall Taylor-Couette reactor. The
+    computational domain is a $5^\circ$ azimuthal wedge of the full annulus,
+    with a one-cell side-outlet band at the bottom of the outer wall.\newline}\label{tab:geometry}
+    \begin{tabular}{lcc}
+        \toprule
+        Parameter & Symbol & Value \\
+        \midrule
+        Inner cylinder radius   & $R_i$          & $25.40$ mm \\
+        Outer cylinder radius   & $R_o$          & $31.75$ mm \\
+        Gap width               & $d = R_o - R_i$ & $6.35$ mm \\
+        Reactor height          & $H$            & $38.10$ mm \\
+        Radius ratio            & $\eta = R_i/R_o$ & $0.80$ \\
+        Aspect ratio            & $\Gamma = H/d$ & $6.0$ \\
+        Side-outlet band height & $h_\mathrm{out}$ & $0.42$ mm \\
+        Azimuthal wedge angle   & $\theta$       & $5^\circ$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The incompressible Navier-Stokes equations
+\begin{align}
+    \rho \nabla \cdot \mathbf{u} &= 0, \\
+    \rho \left( \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u} \right) &= -\nabla p + \mu \nabla^2 \mathbf{u},
+\end{align}
+
+and the transport of dilute species equation
+\begin{align}
+    \frac{\partial c}{\partial t} + \mathbf{u} \cdot \nabla c &= D \nabla^2 c,
+\end{align}
+
+were solved by FVM with the OpenFOAM v2506~\cite{weller1998openfoam} framework.
+
+
+The Reynolds number was defined as $Re = \frac{\omega R_i d}{\nu}$, 
+where $\omega$ is the angular velocity of the inner cylinder and $\nu$ is the kinematic viscosity of the fluid. 
+The flow was assumed to be laminar and incompressible, 
+and the no-slip boundary condition was applied at both cylinder walls.
+
+The Farama Foundation's Gymnasium~\cite{towers2024gymnasium}
+was used as the framework for our reinforcement learning (RL) environment with 
+
+
+\section{Results}
+
+\section{Discussion}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\nocite{lopez2024process,fujimoto2018addressing,lee2023turbulence,zhou2025deep,bergman2011fundamentals,towers2024gymnasium,weller1998openfoam}
+
+
+\end{document}
