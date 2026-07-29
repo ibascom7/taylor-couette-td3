@@ -245,3 +245,37 @@ the constant-300 trap, which is identifiable in the log within ~50 policy
 episodes → abort early, keep the data (the trainer now persists
 `replay_buffer.npz` at every checkpoint, so every run doubles as an offline
 dataset).
+
+## Full-height (Γ=30) transfer eval (2026-07-28): `eval_full_tc.py`
+
+Does the v5 seed-2 policy — trained on the SHORT reactor (Γ=6, τ≈26 s, 50 s
+episodes; deterministic-eval R−=0.2892, X_last=0.4055) — transfer to the
+full Lopez-Guajardo geometry, where the fig7 reference sweep
+(`../modulation_vs_constant/results_full_tc`, 300 s episodes on
+`full_tc_cat_case`) showed conversion behaves much better and static pulsing
+wins bigger (constant-300 X=0.787 / R−=0.670; pulsed D80/T10 @300 X=0.876 /
+R−=0.760, both ~3.7 W)?
+
+- **Case**: `cases/full_tc_grad_case` (NEW) = RL-drivable twin of
+  `full_tc_cat_case` — identical physics/mesh (H=190.5 mm, 16,650 cells),
+  controlDict is a verbatim copy of `side_outlet_grad_case`'s (rlMetrics FO is
+  patch-name based, ports unchanged).
+- **Protocol**: one deterministic episode (noise off), 300 s = 30 × 10 s
+  blocks, pristine IC, fixed-mean w_b=300, training normalizers kept
+  (P_max=31.94 W, wallflux_max=1.32e-8 — on the tall reactor wf_norm may
+  exceed 1; that's part of the transfer test). Metrics match the fig7 table:
+  X_last = final-block X (= last-full-period window, block_dt = the sweep's
+  T = 10 s), P_ep = episode-mean commanded motor power (≈3.7 W by the
+  fixed-mean constraint → equal-power comparison built in), R− = X_last −
+  P_ep/31.94.
+- **The one train/deploy mismatch is the episode clock** (obs[3]): `--clock
+  stretch` (native t/300 — the 50 s program stretched 6×) vs `--clock wrap`
+  ((t mod 50)/50 — the program replayed cyclically 6×, flow state carries
+  over). Both variants run; everything else is in-distribution.
+- **Cost**: ~22 h/episode, 1 core (fig7-measured ~260 CPU-s per sim-second).
+  `--smoke` = 4 s / 2 blocks (~20 min) pipeline check.
+- **Outputs**: `results/full_tc_eval/<tag>/` — blocks.csv (incremental,
+  monitorable), dense_timeseries.csv (0.1 s conversion trace),
+  waveform_points.csv, summary.json, conversion_vs_time.png (with the
+  constant/pulsed wb300 reference traces overlaid), omega_command.png,
+  actions_per_block.png; `--keep_case` leaves the run case as a ParaView case.

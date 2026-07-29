@@ -1,0 +1,113 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volVectorField;
+    location        "0";
+    object          U;
+}
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 0 0 0 );
+
+boundaryField
+{
+    inner_wall
+    {
+        type            rotatingWallVelocity;
+        origin          ( 0 0 0 );
+        axis            ( 0 0 1 );
+        omega           table ( ( 0 33.9754 ) ( 4.007 33.9754 ) ( 4.057 3.27665 ) ( 4.373 3.27665 ) ( 4.423 33.9754 ) ( 8.405 33.9754 ) ( 8.455 3.27665 ) ( 8.771 3.27665 ) ( 8.821 33.9754 ) ( 11 33.9754 ) );
+    }
+    outer_wall
+    {
+        type            noSlip;
+    }
+    bottom
+    {
+        type            noSlip;
+    }
+    inlet
+    {
+        type            codedFixedValue;
+        value           uniform ( 0 0 0 );
+        name            lopezFullyDevelopedAnnularTopInlet;
+        code            #{
+            const fvPatch& p = patch();
+            vectorField Uin(p.size(), vector::zero);
+
+            const vectorField& Cf = p.Cf();
+            const vectorField& Sf = p.Sf();
+
+            const scalar Ri = 0.0254;
+            const scalar Ro = 0.03175;
+            const scalar Q0 = 100e-6/60.0;  // full 360-degree flow rate [m3/s]
+            // UNIFIED to 100 mL/min to match side_outlet_cat_wallmodel (was Yuhe's
+            // 40 mL/min). This makes the outer-wall catalytic BC the ONLY difference
+            // between the two cases (single controlled variable), and shrinks the
+            // residence time (tau ~ 26 s) so the episode reaches steady state well.
+            const scalar pi = 3.1415926535897932384626433832795;
+
+            const scalar Aann = pi*(sqr(Ro) - sqr(Ri));
+            const scalar Umean = Q0/Aann;
+
+            scalarField shape(p.size(), scalar(0));
+            scalar sumShapeA = scalar(0);
+            scalar sumA = scalar(0);
+
+            forAll(Cf, faceI)
+            {
+                const scalar r = sqrt(sqr(Cf[faceI].x()) + sqr(Cf[faceI].y()));
+
+                scalar f =
+                    sqr(Ro) - sqr(r)
+                  - (sqr(Ro) - sqr(Ri))/log(Ro/Ri)*log(Ro/r);
+
+                shape[faceI] = max(f, scalar(0));
+
+                const scalar Af = mag(Sf[faceI]);
+                sumShapeA += shape[faceI]*Af;
+                sumA      += Af;
+            }
+
+            reduce(sumShapeA, sumOp<scalar>());
+            reduce(sumA, sumOp<scalar>());
+
+            const scalar meanShape = sumShapeA/max(sumA, VSMALL);
+            const scalar scale = Umean/max(meanShape, VSMALL);
+
+            forAll(Cf, faceI)
+            {
+                const vector nHat = Sf[faceI]/mag(Sf[faceI]);
+                // Top inlet outward normal points +z; inflow is opposite to it.
+                Uin[faceI] = -scale*shape[faceI]*nHat;
+            }
+
+            operator==(Uin);
+        #};
+    }
+    side_outlet
+    {
+        type            zeroGradient;
+    }
+    front
+    {
+        type            wedge;
+    }
+    back
+    {
+        type            wedge;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,1468 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _d6aa836d-20260127 OPENFOAM=2506 patch=260127 version=2506
+Arch   : "LSB;label=32;scalar=64"
+Exec   : pimpleFoam
+Date   : Jul 28 2026
+Time   : 12:39:23
+Host   : salamander
+PID    : 23664
+--> FOAM Warning : 
+    From Foam::fileName Foam::cwd_L()
+    in file POSIX.C at line 554
+    PWD is not the cwd() - reverting to physical description
+I/O    : uncollated
+--> FOAM Warning : 
+    From Foam::fileName Foam::cwd_L()
+    in file POSIX.C at line 554
+    PWD is not the cwd() - reverting to physical description
+Case   : /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+PIMPLE: no residual control data found. Calculations will employ 2 corrector loops
+
+Reading field p
+
+Reading field U
+
+Using dynamicCode for patch inlet on field U at line 43 in "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/0/U/boundaryField/inlet"
+Could not load "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/platforms/linux64GccDPInt32Opt/lib/liblopezFullyDevelopedAnnularTopInlet_e8151fb15a6c9c8b76f52595667eddb48d414ae9.so"
+/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/platforms/linux64GccDPInt32Opt/lib/liblopezFullyDevelopedAnnularTopInlet_e8151fb15a6c9c8b76f52595667eddb48d414ae9.so: cannot open shared object file: No such file or directory
+Creating new library in "dynamicCode/lopezFullyDevelopedAnnularTopInlet/platforms/linux64GccDPInt32Opt/lib/liblopezFullyDevelopedAnnularTopInlet_e8151fb15a6c9c8b76f52595667eddb48d414ae9.so"
+Invoking wmake libso /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/lopezFullyDevelopedAnnularTopInlet
+wmake libso /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/lopezFullyDevelopedAnnularTopInlet
+    ln: ./lnInclude
+    dep: fixedValueFvPatchFieldTemplate.C
+    Ctoo: fixedValueFvPatchFieldTemplate.C
+    link: /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/lopezFullyDevelopedAnnularTopInlet/../platforms/linux64GccDPInt32Opt/lib/liblopezFullyDevelopedAnnularTopInlet_e8151fb15a6c9c8b76f52595667eddb48d414ae9.so
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+No MRF models present
+
+No finite volume options present
+Courant Number mean: 0 max: 0
+Courant Number mean: 0 max: 0
+
+Starting time loop
+
+Using dynamicCode for functionObject rlMetrics at line 71 in "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/system/controlDict/functions/rlMetrics"
+Could not load "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/platforms/linux64GccDPInt32Opt/lib/librlMetrics_68499454f7dfc132d82f8fa5a80863ef9bcd0e68.so"
+/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/platforms/linux64GccDPInt32Opt/lib/librlMetrics_68499454f7dfc132d82f8fa5a80863ef9bcd0e68.so: cannot open shared object file: No such file or directory
+Creating new library in "dynamicCode/rlMetrics/platforms/linux64GccDPInt32Opt/lib/librlMetrics_68499454f7dfc132d82f8fa5a80863ef9bcd0e68.so"
+Invoking wmake libso /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/rlMetrics
+wmake libso /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/rlMetrics
+    ln: ./lnInclude
+    dep: functionObjectTemplate.C
+    Ctoo: functionObjectTemplate.C
+    link: /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_stretch/case/dynamicCode/rlMetrics/../platforms/linux64GccDPInt32Opt/lib/librlMetrics_68499454f7dfc132d82f8fa5a80863ef9bcd0e68.so
+Courant Number mean: 0 max: 0
+deltaT = 0.00120048019
+Time = 0.00120048019
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Uz, Initial residual = 1, Final residual = 0.000348695058, No Iterations 1
+GAMG:  Solving for p, Initial residual = 1, Final residual = 0.00667702148, No Iterations 27
+time step continuity errors : sum local = 6.15108472e-08, global = -6.98567962e-11, cumulative = -6.98567962e-11
+GAMG:  Solving for p, Initial residual = 0.0096689933, Final residual = 9.09229788e-07, No Iterations 45
+time step continuity errors : sum local = 1.36410443e-09, global = -5.48557413e-12, cumulative = -7.53423704e-11
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.0728362614, Final residual = 1.66384081e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.146718772, Final residual = 1.0290135e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.178028709, Final residual = 2.05239138e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.0272927557, Final residual = 0.000243671036, No Iterations 31
+time step continuity errors : sum local = 1.73386094e-07, global = 1.89927284e-09, cumulative = 1.82393047e-09
+GAMG:  Solving for p, Initial residual = 0.0909423821, Final residual = 7.49259571e-07, No Iterations 59
+time step continuity errors : sum local = 1.49866398e-10, global = -1.73736337e-13, cumulative = 1.82375673e-09
+ExecutionTime = 0.29 s  ClockTime = 8 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 1, Final residual = 1.90162933e-05, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.00120048019 Mz_kin=-1.47398471e-25 conv=0.000808501335 cupC=49.9595749 wallFlux=4.062744e-07
+Courant Number mean: 0.00440390242 max: 0.948043937
+deltaT = 0.00142889774
+Time = 0.00262937793
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.22100532, Final residual = 0.000113625777, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.194722365, Final residual = 0.00179105462, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.749703365, Final residual = 0.000170155205, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.0694585419, Final residual = 0.000510267739, No Iterations 24
+time step continuity errors : sum local = 3.30706011e-07, global = 6.12958797e-10, cumulative = 2.43671553e-09
+GAMG:  Solving for p, Initial residual = 0.029861989, Final residual = 8.61848458e-07, No Iterations 47
+time step continuity errors : sum local = 9.50228141e-10, global = -6.95514146e-12, cumulative = 2.42976038e-09
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.0740664446, Final residual = 8.26338406e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.117689504, Final residual = 5.47263858e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.188024296, Final residual = 6.70279966e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.0694288923, Final residual = 0.000581446453, No Iterations 26
+time step continuity errors : sum local = 2.72004747e-07, global = 2.14770552e-09, cumulative = 4.5774659e-09
+GAMG:  Solving for p, Initial residual = 0.0623367253, Final residual = 7.09789374e-07, No Iterations 55
+time step continuity errors : sum local = 2.79354419e-10, global = 1.63900785e-13, cumulative = 4.5776298e-09
+ExecutionTime = 0.48 s  ClockTime = 8 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0771688569, Final residual = 1.28610555e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.00262937793 Mz_kin=-1.29116651e-25 conv=0.00119738098 cupC=49.940131 wallFlux=3.88747346e-07
+Courant Number mean: 0.00524366584 max: 1.12843002
+deltaT = 0.00165676183
+Time = 0.00428613976
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.179947283, Final residual = 0.000185115236, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.22315061, Final residual = 0.00220120221, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.562211162, Final residual = 0.000207147375, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.119571639, Final residual = 0.00114674379, No Iterations 24
+time step continuity errors : sum local = 5.14580644e-07, global = -1.66075852e-09, cumulative = 2.91687129e-09
+GAMG:  Solving for p, Initial residual = 0.0530122422, Final residual = 8.26317542e-07, No Iterations 45
+time step continuity errors : sum local = 6.91188139e-10, global = -1.95879813e-12, cumulative = 2.91491249e-09
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.127739607, Final residual = 1.7339469e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.097637404, Final residual = 8.27983027e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.100171427, Final residual = 1.84182111e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.346546681, Final residual = 0.00230590961, No Iterations 34
+time step continuity errors : sum local = 4.94455449e-07, global = 6.25687743e-09, cumulative = 9.17178992e-09
+GAMG:  Solving for p, Initial residual = 0.0897935328, Final residual = 5.90584885e-07, No Iterations 57
+time step continuity errors : sum local = 4.07731346e-10, global = -4.50058978e-12, cumulative = 9.16728933e-09
+ExecutionTime = 0.69 s  ClockTime = 9 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0415082221, Final residual = 1.12587958e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.00428613976 Mz_kin=-8.84607151e-26 conv=0.00235373235 cupC=49.8823134 wallFlux=3.69697518e-07
+Courant Number mean: 0.00609038634 max: 1.30837851
+deltaT = 0.0018858217
+Time = 0.00617196147
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.213332298, Final residual = 0.000209805463, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.120821726, Final residual = 0.00114129905, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0461865926, Final residual = 9.01334415e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.568561364, Final residual = 0.00564530088, No Iterations 23
+time step continuity errors : sum local = 1.39940565e-06, global = -4.95072448e-07, cumulative = -4.85905159e-07
+GAMG:  Solving for p, Initial residual = 0.0965068316, Final residual = 8.22178154e-07, No Iterations 65
+time step continuity errors : sum local = 9.81405006e-10, global = 5.34700071e-12, cumulative = -4.85899812e-07
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.289496877, Final residual = 6.01398552e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.124217758, Final residual = 8.6834589e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0333136309, Final residual = 1.46795724e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.502683815, Final residual = 0.0042808673, No Iterations 24
+time step continuity errors : sum local = 2.00038545e-06, global = 7.50127453e-07, cumulative = 2.64227641e-07
+GAMG:  Solving for p, Initial residual = 0.0904097938, Final residual = 7.39843852e-07, No Iterations 66
+time step continuity errors : sum local = 1.5981782e-09, global = 6.95017292e-12, cumulative = 2.64234591e-07
+ExecutionTime = 0.9 s  ClockTime = 9 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0286453433, Final residual = 1.40543422e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.00617196147 Mz_kin=9.83573887e-27 conv=0.00555874831 cupC=49.7220626 wallFlux=3.49665496e-07
+Courant Number mean: 0.00697850747 max: 1.48927299
+deltaT = 0.00211452774
+Time = 0.00828648921
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.446342729, Final residual = 0.000491394327, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.198038435, Final residual = 5.89098192e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0729408661, Final residual = 0.000138697934, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.549074293, Final residual = 0.00535642952, No Iterations 23
+time step continuity errors : sum local = 4.75744272e-06, global = -1.82189871e-06, cumulative = -1.55766412e-06
+GAMG:  Solving for p, Initial residual = 0.088226554, Final residual = 9.3780331e-07, No Iterations 66
+time step continuity errors : sum local = 4.27752637e-09, global = -9.62553836e-12, cumulative = -1.55767375e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.57278062, Final residual = 1.06874328e-07, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.337956191, Final residual = 1.64393784e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0801650659, Final residual = 3.95546198e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.535427708, Final residual = 0.00462768069, No Iterations 24
+time step continuity errors : sum local = 7.64623112e-06, global = 2.90288512e-06, cumulative = 1.34521137e-06
+GAMG:  Solving for p, Initial residual = 0.0856266357, Final residual = 7.60293659e-07, No Iterations 67
+time step continuity errors : sum local = 6.56936514e-09, global = -1.01369742e-10, cumulative = 1.34511e-06
+ExecutionTime = 1.13 s  ClockTime = 9 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.021863915, Final residual = 2.53948229e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.00828648921 Mz_kin=2.90044448e-25 conv=0.0163672463 cupC=49.1816377 wallFlux=3.29162352e-07
+Courant Number mean: 0.00812058082 max: 1.66987572
+deltaT = 0.00227980117
+Time = 0.0105662904
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.691992361, Final residual = 0.000803452462, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.287231571, Final residual = 9.60407893e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.15797767, Final residual = 0.000298578034, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.542458047, Final residual = 0.00534394799, No Iterations 23
+time step continuity errors : sum local = 1.82204064e-05, global = -6.98073873e-06, cumulative = -5.63562872e-06
+GAMG:  Solving for p, Initial residual = 0.0873355885, Final residual = 7.17013528e-07, No Iterations 65
+time step continuity errors : sum local = 1.25947181e-08, global = -6.61748562e-11, cumulative = -5.6356949e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.78945367, Final residual = 6.95789183e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.571425949, Final residual = 3.87906603e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.224210322, Final residual = 8.30436563e-08, No Iterations 3
+GAMG:  Solving for p, Initial residual = 0.547547026, Final residual = 0.0048224661, No Iterations 24
+time step continuity errors : sum local = 3.09218866e-05, global = 1.17544805e-05, cumulative = 6.11878562e-06
+GAMG:  Solving for p, Initial residual = 0.0843048553, Final residual = 8.82514957e-07, No Iterations 63
+time step continuity errors : sum local = 3.08894254e-08, global = -4.21588624e-11, cumulative = 6.11874346e-06
+ExecutionTime = 1.33 s  ClockTime = 9 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0171315346, Final residual = 3.96515611e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0105662904 Mz_kin=1.57672088e-24 conv=0.0539382936 cupC=47.3030853 wallFlux=3.09203893e-07
+Courant Number mean: 0.0111045524 max: 4.54532463
+deltaT = 0.000902767983
+Time = 0.0114690584
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.694205047, Final residual = 0.00049046119, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.210212914, Final residual = 0.0009011371, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.298446394, Final residual = 0.000320694449, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.425040469, Final residual = 0.00421604321, No Iterations 23
+time step continuity errors : sum local = 1.65173448e-05, global = -6.33952466e-06, cumulative = -2.20781202e-07
+GAMG:  Solving for p, Initial residual = 0.0985334674, Final residual = 7.44883652e-07, No Iterations 68
+time step continuity errors : sum local = 9.86663656e-09, global = 4.07476434e-12, cumulative = -2.20777127e-07
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.783126467, Final residual = 2.05066366e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.222075405, Final residual = 3.05821716e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.260795942, Final residual = 8.87593079e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.464272512, Final residual = 0.00396078173, No Iterations 24
+time step continuity errors : sum local = 1.55055163e-05, global = 5.87746761e-06, cumulative = 5.65669048e-06
+GAMG:  Solving for p, Initial residual = 0.100314258, Final residual = 5.17451578e-07, No Iterations 66
+time step continuity errors : sum local = 7.58678363e-09, global = 2.42024624e-11, cumulative = 5.65671468e-06
+ExecutionTime = 1.56 s  ClockTime = 9 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00525179337, Final residual = 2.01624387e-07, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0114690584 Mz_kin=2.07239259e-24 conv=0.0756520221 cupC=46.2173989 wallFlux=3.01888811e-07
+Courant Number mean: 0.00505309977 max: 2.24052249
+deltaT = 0.000725261146
+Time = 0.0121943195
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.607941049, Final residual = 0.00048096429, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.146995865, Final residual = 0.000427713802, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.293003, Final residual = 0.000351223248, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.3838758, Final residual = 0.0037079269, No Iterations 23
+time step continuity errors : sum local = 1.25117974e-05, global = -4.81891815e-06, cumulative = 8.37796531e-07
+GAMG:  Solving for p, Initial residual = 0.115423058, Final residual = 9.00745381e-07, No Iterations 73
+time step continuity errors : sum local = 7.68642794e-09, global = 1.27599725e-11, cumulative = 8.37809291e-07
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.645341491, Final residual = 3.20885815e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0813440784, Final residual = 4.73847634e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.203595761, Final residual = 6.57864098e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.435707346, Final residual = 0.00430658527, No Iterations 23
+time step continuity errors : sum local = 1.04465793e-05, global = 3.99219557e-06, cumulative = 4.83000486e-06
+GAMG:  Solving for p, Initial residual = 0.114432084, Final residual = 8.84481993e-07, No Iterations 71
+time step continuity errors : sum local = 6.4217272e-09, global = -4.22092127e-11, cumulative = 4.82996265e-06
+ExecutionTime = 1.78 s  ClockTime = 10 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00383398013, Final residual = 5.78287757e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0121943195 Mz_kin=2.38762897e-24 conv=0.0870399995 cupC=45.648 wallFlux=2.9622994e-07
+Courant Number mean: 0.00440299749 max: 1.92239065
+deltaT = 0.000678904248
+Time = 0.0128732238
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.471318106, Final residual = 0.000415680989, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0889775907, Final residual = 0.000237364283, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.223498338, Final residual = 0.000280356538, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.359987539, Final residual = 0.00351786374, No Iterations 23
+time step continuity errors : sum local = 7.85255696e-06, global = -3.03246392e-06, cumulative = 1.79749874e-06
+GAMG:  Solving for p, Initial residual = 0.122020099, Final residual = 7.19412729e-07, No Iterations 67
+time step continuity errors : sum local = 3.57116282e-09, global = 3.76603394e-12, cumulative = 1.7975025e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.467904051, Final residual = 2.34496857e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0358007906, Final residual = 1.86270257e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.141447068, Final residual = 5.65621856e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.418154348, Final residual = 0.00408830331, No Iterations 23
+time step continuity errors : sum local = 6.11815899e-06, global = 2.34171483e-06, cumulative = 4.13921733e-06
+GAMG:  Solving for p, Initial residual = 0.120669841, Final residual = 6.56408606e-07, No Iterations 70
+time step continuity errors : sum local = 2.62217421e-09, global = -6.90535399e-12, cumulative = 4.13921043e-06
+ExecutionTime = 2 s  ClockTime = 10 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00333657602, Final residual = 2.39221358e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0128732238 Mz_kin=2.51083995e-24 conv=0.0896705304 cupC=45.5164735 wallFlux=2.91094005e-07
+Courant Number mean: 0.00420062604 max: 1.88366152
+deltaT = 0.000648572126
+Time = 0.0135217959
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.332444205, Final residual = 0.000272118734, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0536047545, Final residual = 0.000140300246, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.143138927, Final residual = 0.000167130072, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.339542705, Final residual = 0.00288884385, No Iterations 24
+time step continuity errors : sum local = 3.85993079e-06, global = -1.48178729e-06, cumulative = 2.65742313e-06
+GAMG:  Solving for p, Initial residual = 0.122231068, Final residual = 8.99847605e-07, No Iterations 73
+time step continuity errors : sum local = 2.52814108e-09, global = -2.30441824e-11, cumulative = 2.65740009e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.300937557, Final residual = 1.12276885e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0186487843, Final residual = 4.818626e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0854324388, Final residual = 2.8072677e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.404076231, Final residual = 0.00391856085, No Iterations 23
+time step continuity errors : sum local = 3.35930151e-06, global = 1.28680757e-06, cumulative = 3.94420766e-06
+GAMG:  Solving for p, Initial residual = 0.123725997, Final residual = 8.17490061e-07, No Iterations 71
+time step continuity errors : sum local = 1.74197312e-09, global = 1.38449356e-11, cumulative = 3.9442215e-06
+ExecutionTime = 2.23 s  ClockTime = 10 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0029932553, Final residual = 1.14091643e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0135217959 Mz_kin=2.57368872e-24 conv=0.0843174788 cupC=45.7841261 wallFlux=2.86322802e-07
+Courant Number mean: 0.00391957888 max: 1.75549362
+deltaT = 0.000665190967
+Time = 0.0141869869
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.226485726, Final residual = 0.000158102331, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0425587475, Final residual = 0.000115987966, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0930755077, Final residual = 9.536289e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.317446472, Final residual = 0.00280842634, No Iterations 24
+time step continuity errors : sum local = 2.32109398e-06, global = -8.89294989e-07, cumulative = 3.05492651e-06
+GAMG:  Solving for p, Initial residual = 0.118694134, Final residual = 8.36360016e-07, No Iterations 73
+time step continuity errors : sum local = 1.43666887e-09, global = 8.10793447e-12, cumulative = 3.05493462e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.199413168, Final residual = 5.15611282e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0119773468, Final residual = 2.98316853e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0519614241, Final residual = 7.00131485e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.386815784, Final residual = 0.0037957477, No Iterations 23
+time step continuity errors : sum local = 2.07162209e-06, global = 7.93064829e-07, cumulative = 3.84799945e-06
+GAMG:  Solving for p, Initial residual = 0.121421497, Final residual = 8.53652113e-07, No Iterations 73
+time step continuity errors : sum local = 1.14102724e-09, global = 6.19969868e-12, cumulative = 3.84800565e-06
+ExecutionTime = 2.45 s  ClockTime = 10 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00290179235, Final residual = 6.09937937e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0141869869 Mz_kin=2.56285754e-24 conv=0.0730555043 cupC=46.3472248 wallFlux=2.81560165e-07
+Courant Number mean: 0.00384361813 max: 1.67890853
+deltaT = 0.000713323454
+Time = 0.0149003103
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.157624875, Final residual = 0.000100230742, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0455707703, Final residual = 0.000125868663, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0664529935, Final residual = 5.60199199e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.299654803, Final residual = 0.00274581542, No Iterations 24
+time step continuity errors : sum local = 1.56194634e-06, global = -5.96332226e-07, cumulative = 3.25167342e-06
+GAMG:  Solving for p, Initial residual = 0.11270039, Final residual = 7.64564332e-07, No Iterations 70
+time step continuity errors : sum local = 9.3485266e-10, global = 6.54707296e-12, cumulative = 3.25167997e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.148993492, Final residual = 2.70776062e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00861217583, Final residual = 2.42250709e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0340636606, Final residual = 3.7167403e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.378764876, Final residual = 0.00373420208, No Iterations 23
+time step continuity errors : sum local = 1.48132476e-06, global = 5.66637896e-07, cumulative = 3.81831787e-06
+GAMG:  Solving for p, Initial residual = 0.11782243, Final residual = 8.89690548e-07, No Iterations 72
+time step continuity errors : sum local = 8.86077287e-10, global = 1.59879069e-12, cumulative = 3.81831946e-06
+ExecutionTime = 2.68 s  ClockTime = 11 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00294187155, Final residual = 3.36081367e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0149003103 Mz_kin=2.49325029e-24 conv=0.0586868873 cupC=47.0656556 wallFlux=2.76596675e-07
+Courant Number mean: 0.0039028105 max: 1.57168478
+deltaT = 0.000795076424
+Time = 0.0156953867
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.132916764, Final residual = 7.61753029e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0500276335, Final residual = 0.000155059121, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0518987355, Final residual = 3.57527424e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.30103393, Final residual = 0.00276692843, No Iterations 24
+time step continuity errors : sum local = 1.24494566e-06, global = -4.73631635e-07, cumulative = 3.34468783e-06
+GAMG:  Solving for p, Initial residual = 0.107406679, Final residual = 5.05624535e-07, No Iterations 71
+time step continuity errors : sum local = 5.29133726e-10, global = -7.04261357e-12, cumulative = 3.34468079e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.133237949, Final residual = 1.9423402e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00816362349, Final residual = 2.68638145e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.025742726, Final residual = 2.24467431e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.387889792, Final residual = 0.00377521243, No Iterations 23
+time step continuity errors : sum local = 1.28977664e-06, global = 4.93009399e-07, cumulative = 3.83769019e-06
+GAMG:  Solving for p, Initial residual = 0.11427049, Final residual = 8.62352898e-07, No Iterations 70
+time step continuity errors : sum local = 7.86050339e-10, global = -1.69955805e-12, cumulative = 3.83768849e-06
+ExecutionTime = 2.9 s  ClockTime = 11 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00309778235, Final residual = 9.88600254e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0156953867 Mz_kin=2.40264248e-24 conv=0.0446565208 cupC=47.767174 wallFlux=2.7123761e-07
+Courant Number mean: 0.00410725948 max: 1.44913189
+deltaT = 0.00089400964
+Time = 0.0165893964
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.135635232, Final residual = 6.87440229e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0524665685, Final residual = 0.000187118505, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0457429101, Final residual = 2.49161731e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.33099895, Final residual = 0.0029124989, No Iterations 24
+time step continuity errors : sum local = 1.18674193e-06, global = -4.50295536e-07, cumulative = 3.38739295e-06
+GAMG:  Solving for p, Initial residual = 0.104613104, Final residual = 8.5287488e-07, No Iterations 69
+time step continuity errors : sum local = 9.06570038e-10, global = 9.94322434e-12, cumulative = 3.38740289e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.142375312, Final residual = 2.7198847e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00939999723, Final residual = 3.69757736e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0231422482, Final residual = 1.4911978e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.411193613, Final residual = 0.00392777061, No Iterations 23
+time step continuity errors : sum local = 1.35156507e-06, global = 5.16325314e-07, cumulative = 3.90372821e-06
+GAMG:  Solving for p, Initial residual = 0.111121884, Final residual = 6.6418172e-07, No Iterations 69
+time step continuity errors : sum local = 6.65469573e-10, global = -1.40085728e-11, cumulative = 3.9037142e-06
+ExecutionTime = 3.12 s  ClockTime = 11 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00327707044, Final residual = 1.45603863e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0165893964 Mz_kin=2.30936471e-24 conv=0.0334835416 cupC=48.3258229 wallFlux=2.65425105e-07
+Courant Number mean: 0.004372272 max: 1.29803083
+deltaT = 0.0010180234
+Time = 0.0176074198
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.156141563, Final residual = 7.6634618e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0539633725, Final residual = 0.000225060131, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0439819329, Final residual = 2.12411049e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.381667824, Final residual = 0.00376314211, No Iterations 23
+time step continuity errors : sum local = 1.6330224e-06, global = -6.23308794e-07, cumulative = 3.2804054e-06
+GAMG:  Solving for p, Initial residual = 0.103572481, Final residual = 6.77379999e-07, No Iterations 68
+time step continuity errors : sum local = 8.75914013e-10, global = 1.23429372e-11, cumulative = 3.28041775e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.18336609, Final residual = 1.41868602e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0132681073, Final residual = 6.33779921e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0257689542, Final residual = 1.70352725e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.438156401, Final residual = 0.00419206283, No Iterations 23
+time step continuity errors : sum local = 1.7769123e-06, global = 6.78178886e-07, cumulative = 3.95859663e-06
+GAMG:  Solving for p, Initial residual = 0.105668358, Final residual = 9.86521938e-07, No Iterations 67
+time step continuity errors : sum local = 1.37056504e-09, global = 2.00507103e-11, cumulative = 3.95861668e-06
+ExecutionTime = 3.34 s  ClockTime = 11 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0034940487, Final residual = 1.83191694e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0176074198 Mz_kin=2.22668768e-24 conv=0.0257632106 cupC=48.7118395 wallFlux=2.59071446e-07
+Courant Number mean: 0.00474201008 max: 1.14855719
+deltaT = 0.00117792875
+Time = 0.0187853485
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.208043431, Final residual = 0.000111632764, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0541024234, Final residual = 0.000266516348, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0476087218, Final residual = 2.53957122e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.436523591, Final residual = 0.00417304492, No Iterations 23
+time step continuity errors : sum local = 2.40904715e-06, global = -9.20275649e-07, cumulative = 3.03834103e-06
+GAMG:  Solving for p, Initial residual = 0.101407073, Final residual = 9.77009525e-07, No Iterations 69
+time step continuity errors : sum local = 1.94074164e-09, global = 9.60317055e-12, cumulative = 3.03835064e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.278755996, Final residual = 5.40003395e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.022600422, Final residual = 4.22909592e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0357698025, Final residual = 4.47847584e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.472051223, Final residual = 0.00451681248, No Iterations 23
+time step continuity errors : sum local = 2.92619288e-06, global = 1.1176541e-06, cumulative = 4.15600474e-06
+GAMG:  Solving for p, Initial residual = 0.101664149, Final residual = 9.35587964e-07, No Iterations 68
+time step continuity errors : sum local = 2.23847629e-09, global = -2.7263167e-11, cumulative = 4.15597748e-06
+ExecutionTime = 3.56 s  ClockTime = 12 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00376470444, Final residual = 6.10392593e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0187853485 Mz_kin=2.16248413e-24 conv=0.021535387 cupC=48.9232307 wallFlux=2.5205632e-07
+Courant Number mean: 0.00528818529 max: 1.01168286
+deltaT = 0.00138785665
+Time = 0.0201732052
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.317471654, Final residual = 0.000202181339, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.053220199, Final residual = 0.000309487675, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0614604018, Final residual = 4.46196375e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.480731844, Final residual = 0.00453648654, No Iterations 23
+time step continuity errors : sum local = 4.53253578e-06, global = -1.73382449e-06, cumulative = 2.42215299e-06
+GAMG:  Solving for p, Initial residual = 0.0991942411, Final residual = 9.10821849e-07, No Iterations 65
+time step continuity errors : sum local = 3.52847157e-09, global = 5.49589772e-12, cumulative = 2.42215848e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.458373749, Final residual = 4.27613084e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0510481278, Final residual = 1.42629037e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0625712111, Final residual = 5.17372753e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.501953588, Final residual = 0.00484047674, No Iterations 23
+time step continuity errors : sum local = 6.22845781e-06, global = 2.38070199e-06, cumulative = 4.80286047e-06
+GAMG:  Solving for p, Initial residual = 0.0976775784, Final residual = 9.73261486e-07, No Iterations 68
+time step continuity errors : sum local = 5.17011287e-09, global = -3.06614504e-11, cumulative = 4.80282981e-06
+ExecutionTime = 3.77 s  ClockTime = 12 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00410163202, Final residual = 9.41288637e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0201732052 Mz_kin=2.20574669e-24 conv=0.0217238374 cupC=48.9138081 wallFlux=2.44231071e-07
+Courant Number mean: 0.00617959225 max: 1.09601586
+deltaT = 0.0016168759
+Time = 0.0217900811
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.4976658, Final residual = 0.000386678525, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0720073122, Final residual = 0.000477814868, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.103280998, Final residual = 0.000115028683, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.505263219, Final residual = 0.00476142399, No Iterations 23
+time step continuity errors : sum local = 1.05947e-05, global = -4.06110394e-06, cumulative = 7.41725869e-07
+GAMG:  Solving for p, Initial residual = 0.0973218663, Final residual = 6.86481813e-07, No Iterations 69
+time step continuity errors : sum local = 6.38949892e-09, global = -7.11857135e-11, cumulative = 7.41654683e-07
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.678263725, Final residual = 8.38923301e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.132602321, Final residual = 5.83154578e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.130480108, Final residual = 2.05338797e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.521071242, Final residual = 0.00509588941, No Iterations 23
+time step continuity errors : sum local = 1.62693805e-05, global = 6.22744752e-06, cumulative = 6.9691022e-06
+GAMG:  Solving for p, Initial residual = 0.0950157567, Final residual = 5.90741985e-07, No Iterations 67
+time step continuity errors : sum local = 8.42505828e-09, global = 7.95306922e-11, cumulative = 6.96918173e-06
+ExecutionTime = 3.99 s  ClockTime = 12 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00438811495, Final residual = 3.27759661e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0217900811 Mz_kin=2.4034056e-24 conv=0.0319366712 cupC=48.4031664 wallFlux=2.35687668e-07
+Courant Number mean: 0.00770552147 max: 2.25337141
+deltaT = 0.00129221918
+Time = 0.0230823003
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.629028036, Final residual = 0.000476690976, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.115188842, Final residual = 0.000647261872, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.18262063, Final residual = 0.000234431065, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.474996017, Final residual = 0.00449538943, No Iterations 23
+time step continuity errors : sum local = 1.71674708e-05, global = -6.60082593e-06, cumulative = 3.68355808e-07
+GAMG:  Solving for p, Initial residual = 0.10040171, Final residual = 9.01154007e-07, No Iterations 68
+time step continuity errors : sum local = 1.29579483e-08, global = 8.1343122e-11, cumulative = 3.68437151e-07
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.763997499, Final residual = 2.93403836e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.177854709, Final residual = 4.88451502e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.206711764, Final residual = 9.86763777e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.501795821, Final residual = 0.00489990096, No Iterations 23
+time step continuity errors : sum local = 2.31776593e-05, global = 8.87420663e-06, cumulative = 9.24264378e-06
+GAMG:  Solving for p, Initial residual = 0.0990575694, Final residual = 7.97082308e-07, No Iterations 66
+time step continuity errors : sum local = 1.54470755e-08, global = -1.99613497e-10, cumulative = 9.24244417e-06
+ExecutionTime = 4.21 s  ClockTime = 12 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00321619854, Final residual = 3.99337754e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0230823003 Mz_kin=2.77244906e-24 conv=0.0539976268 cupC=47.3001187 wallFlux=2.29296248e-07
+Courant Number mean: 0.00715181802 max: 3.10944355
+deltaT = 0.000748022741
+Time = 0.023830323
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.598399925, Final residual = 0.000458639304, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.100939724, Final residual = 0.000329558301, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.218277999, Final residual = 0.000250081602, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.404105351, Final residual = 0.00383074305, No Iterations 23
+time step continuity errors : sum local = 1.26410968e-05, global = -4.86022664e-06, cumulative = 4.38221753e-06
+GAMG:  Solving for p, Initial residual = 0.111905486, Final residual = 7.4740657e-07, No Iterations 69
+time step continuity errors : sum local = 6.76125897e-09, global = 1.24484147e-11, cumulative = 4.38222997e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.659131154, Final residual = 2.85626422e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0717475688, Final residual = 5.28861206e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.174458111, Final residual = 5.32884573e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.452539552, Final residual = 0.00438031337, No Iterations 23
+time step continuity errors : sum local = 1.13479696e-05, global = 4.33227589e-06, cumulative = 8.71450586e-06
+GAMG:  Solving for p, Initial residual = 0.112093594, Final residual = 9.25984468e-07, No Iterations 72
+time step continuity errors : sum local = 7.59554622e-09, global = -6.4277907e-11, cumulative = 8.71444159e-06
+ExecutionTime = 4.43 s  ClockTime = 12 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0017443175, Final residual = 3.6062195e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.023830323 Mz_kin=3.18698749e-24 conv=0.0693783682 cupC=46.5310816 wallFlux=2.25765931e-07
+Courant Number mean: 0.00446482765 max: 1.73187526
+deltaT = 0.000777205157
+Time = 0.0246075281
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.510300321, Final residual = 0.000489576141, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0758060526, Final residual = 0.000237238011, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.190739724, Final residual = 0.000261856733, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.388647474, Final residual = 0.00367014686, No Iterations 23
+time step continuity errors : sum local = 1.0221641e-05, global = -3.94662055e-06, cumulative = 4.76782104e-06
+GAMG:  Solving for p, Initial residual = 0.12031688, Final residual = 8.04665661e-07, No Iterations 68
+time step continuity errors : sum local = 5.49840626e-09, global = -3.66649907e-11, cumulative = 4.76778437e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.550787239, Final residual = 3.31170466e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0403378571, Final residual = 2.84709298e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.142685714, Final residual = 6.47854269e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.441971519, Final residual = 0.0041978729, No Iterations 23
+time step continuity errors : sum local = 8.77659242e-06, global = 3.35969076e-06, cumulative = 8.12747514e-06
+GAMG:  Solving for p, Initial residual = 0.11980201, Final residual = 9.08880372e-07, No Iterations 71
+time step continuity errors : sum local = 5.44782139e-09, global = -4.04623441e-11, cumulative = 8.12743467e-06
+ExecutionTime = 4.65 s  ClockTime = 13 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00174030358, Final residual = 1.06111047e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0246075281 Mz_kin=3.44859137e-24 conv=0.0801467516 cupC=45.9926624 wallFlux=2.22214781e-07
+Courant Number mean: 0.004816783 max: 2.03224894
+deltaT = 0.000688350368
+Time = 0.0252958785
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.39416822, Final residual = 0.000365472282, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0450483921, Final residual = 0.000126185051, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.137151572, Final residual = 0.000177095691, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.370331959, Final residual = 0.00351175523, No Iterations 23
+time step continuity errors : sum local = 6.33486863e-06, global = -2.44645556e-06, cumulative = 5.68097912e-06
+GAMG:  Solving for p, Initial residual = 0.125381317, Final residual = 7.15128125e-07, No Iterations 74
+time step continuity errors : sum local = 2.87600499e-09, global = -1.80333092e-11, cumulative = 5.68096108e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.39702896, Final residual = 1.88297437e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0226300739, Final residual = 6.46272559e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0955416699, Final residual = 3.87979259e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.426731162, Final residual = 0.00406289581, No Iterations 23
+time step continuity errors : sum local = 5.0643318e-06, global = 1.93833656e-06, cumulative = 7.61929764e-06
+GAMG:  Solving for p, Initial residual = 0.122538725, Final residual = 8.3361321e-07, No Iterations 71
+time step continuity errors : sum local = 2.77369208e-09, global = -2.00622066e-14, cumulative = 7.61929762e-06
+ExecutionTime = 4.88 s  ClockTime = 13 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00147706138, Final residual = 1.11170486e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0252958785 Mz_kin=3.56312717e-24 conv=0.0816732258 cupC=45.9163387 wallFlux=2.19157787e-07
+Courant Number mean: 0.00423578687 max: 1.78370609
+deltaT = 0.000694728526
+Time = 0.025990607
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.293202557, Final residual = 0.000243030738, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0336149883, Final residual = 9.74496654e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.094836947, Final residual = 0.000114696092, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.350071064, Final residual = 0.00344562752, No Iterations 23
+time step continuity errors : sum local = 4.14725969e-06, global = -1.59947099e-06, cumulative = 6.01982663e-06
+GAMG:  Solving for p, Initial residual = 0.123436522, Final residual = 5.77679559e-07, No Iterations 71
+time step continuity errors : sum local = 1.513297e-09, global = 3.13395134e-11, cumulative = 6.01985797e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.283394102, Final residual = 9.91883976e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0133871002, Final residual = 3.80813734e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0637616405, Final residual = 2.10676255e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.412218381, Final residual = 0.0039804998, No Iterations 23
+time step continuity errors : sum local = 3.31680397e-06, global = 1.26889095e-06, cumulative = 7.28874892e-06
+GAMG:  Solving for p, Initial residual = 0.121377477, Final residual = 9.8061448e-07, No Iterations 72
+time step continuity errors : sum local = 2.13080644e-09, global = 2.65355024e-11, cumulative = 7.28877545e-06
+ExecutionTime = 5.11 s  ClockTime = 13 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0014397538, Final residual = 5.5618164e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.025990607 Mz_kin=3.56633041e-24 conv=0.0757735957 cupC=46.2113202 wallFlux=2.16149029e-07
+Courant Number mean: 0.00414196581 max: 1.77908179
+deltaT = 0.00070274848
+Time = 0.0266933555
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.213638674, Final residual = 0.000153478647, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0309336921, Final residual = 8.802925e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0662364593, Final residual = 6.72359701e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.330063425, Final residual = 0.00288501443, No Iterations 24
+time step continuity errors : sum local = 2.33878045e-06, global = -8.94141369e-07, cumulative = 6.39463408e-06
+GAMG:  Solving for p, Initial residual = 0.118028865, Final residual = 9.19582319e-07, No Iterations 71
+time step continuity errors : sum local = 1.65045302e-09, global = 2.41993588e-11, cumulative = 6.39465828e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.205336837, Final residual = 4.92117393e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00980018279, Final residual = 2.70846161e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0419153987, Final residual = 5.60731858e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.405632732, Final residual = 0.00391574271, No Iterations 23
+time step continuity errors : sum local = 2.18968054e-06, global = 8.37512213e-07, cumulative = 7.2321705e-06
+GAMG:  Solving for p, Initial residual = 0.120859053, Final residual = 6.26888054e-07, No Iterations 71
+time step continuity errors : sum local = 9.09068265e-10, global = 7.14074627e-12, cumulative = 7.23217764e-06
+ExecutionTime = 5.32 s  ClockTime = 13 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00140979955, Final residual = 1.31868204e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0266933555 Mz_kin=3.4975609e-24 conv=0.0649470769 cupC=46.7526462 wallFlux=2.13180433e-07
+Courant Number mean: 0.00400895586 max: 1.66001006
+deltaT = 0.00076218218
+Time = 0.0274555377
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.161472597, Final residual = 0.000110519332, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0340253045, Final residual = 9.92428735e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0504783122, Final residual = 4.31477194e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.320410647, Final residual = 0.0028681942, No Iterations 24
+time step continuity errors : sum local = 1.74581541e-06, global = -6.65574873e-07, cumulative = 6.56660277e-06
+GAMG:  Solving for p, Initial residual = 0.113061744, Final residual = 7.32134642e-07, No Iterations 69
+time step continuity errors : sum local = 1.03145849e-09, global = 5.92360376e-13, cumulative = 6.56660336e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.169212537, Final residual = 3.062059e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00780851615, Final residual = 2.28070512e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0309018207, Final residual = 3.33864743e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.405181123, Final residual = 0.00390812871, No Iterations 23
+time step continuity errors : sum local = 1.74457586e-06, global = 6.66862665e-07, cumulative = 7.23346602e-06
+GAMG:  Solving for p, Initial residual = 0.117753582, Final residual = 8.36551109e-07, No Iterations 72
+time step continuity errors : sum local = 1.00307791e-09, global = -1.14241644e-11, cumulative = 7.2334546e-06
+ExecutionTime = 5.54 s  ClockTime = 13 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00147925332, Final residual = 5.13883923e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0274555377 Mz_kin=3.40486485e-24 conv=0.0522419785 cupC=47.3879011 wallFlux=2.10045845e-07
+Courant Number mean: 0.0041315981 max: 1.56098471
+deltaT = 0.000850126278
+Time = 0.028305664
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.149715095, Final residual = 9.45874851e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0369626562, Final residual = 0.000123660862, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0426173033, Final residual = 3.04762511e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.332873628, Final residual = 0.00294865707, No Iterations 24
+time step continuity errors : sum local = 1.53573795e-06, global = -5.84025677e-07, cumulative = 6.64942892e-06
+GAMG:  Solving for p, Initial residual = 0.108940912, Final residual = 6.66162802e-07, No Iterations 71
+time step continuity errors : sum local = 8.77677079e-10, global = 4.59423489e-12, cumulative = 6.64943352e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.164901839, Final residual = 2.87206981e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00811117757, Final residual = 3.10790933e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0264400446, Final residual = 2.26062194e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.420537335, Final residual = 0.00400465918, No Iterations 23
+time step continuity errors : sum local = 1.67631905e-06, global = 6.40498384e-07, cumulative = 7.2899319e-06
+GAMG:  Solving for p, Initial residual = 0.11438024, Final residual = 7.56978867e-07, No Iterations 69
+time step continuity errors : sum local = 9.13395556e-10, global = 1.25941427e-12, cumulative = 7.28993316e-06
+ExecutionTime = 5.77 s  ClockTime = 14 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00159531074, Final residual = 9.70160724e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.028305664 Mz_kin=3.27907638e-24 conv=0.040490905 cupC=47.9754547 wallFlux=2.06654261e-07
+Courant Number mean: 0.00437283254 max: 1.43942884
+deltaT = 0.000956392063
+Time = 0.029262056
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.161958226, Final residual = 9.51489559e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.038535911, Final residual = 0.000148875824, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0400918031, Final residual = 2.4287857e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.369111333, Final residual = 0.00313460518, No Iterations 24
+time step continuity errors : sum local = 1.61917707e-06, global = -6.14850003e-07, cumulative = 6.67508316e-06
+GAMG:  Solving for p, Initial residual = 0.106446125, Final residual = 7.23043004e-07, No Iterations 66
+time step continuity errors : sum local = 1.06025375e-09, global = 1.5561618e-11, cumulative = 6.67509872e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.190977862, Final residual = 5.98790567e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0100413304, Final residual = 4.58384131e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.026928389, Final residual = 1.77540625e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.444312817, Final residual = 0.0041761408, No Iterations 23
+time step continuity errors : sum local = 1.94203003e-06, global = 7.41918849e-07, cumulative = 7.41701757e-06
+GAMG:  Solving for p, Initial residual = 0.110800958, Final residual = 8.70104214e-07, No Iterations 68
+time step continuity errors : sum local = 1.27418251e-09, global = 4.06945729e-12, cumulative = 7.41702164e-06
+ExecutionTime = 5.99 s  ClockTime = 14 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00172890458, Final residual = 1.31640723e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.029262056 Mz_kin=3.14129339e-24 conv=0.0313859863 cupC=48.4307007 wallFlux=2.02968791e-07
+Courant Number mean: 0.00468231518 max: 1.2966913
+deltaT = 0.00108949264
+Time = 0.0303515487
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.199608993, Final residual = 0.000116185344, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0393618186, Final residual = 0.000179258, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0422146464, Final residual = 2.46102491e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.417804577, Final residual = 0.00401640982, No Iterations 23
+time step continuity errors : sum local = 2.46449488e-06, global = -9.42208787e-07, cumulative = 6.47481285e-06
+GAMG:  Solving for p, Initial residual = 0.105128533, Final residual = 7.21926568e-07, No Iterations 66
+time step continuity errors : sum local = 1.417108e-09, global = 2.13311442e-11, cumulative = 6.47483418e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.261178984, Final residual = 4.87294369e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0146855912, Final residual = 8.25357925e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0337583033, Final residual = 2.82915216e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.467132521, Final residual = 0.00442924669, No Iterations 23
+time step continuity errors : sum local = 2.82556603e-06, global = 1.07901719e-06, cumulative = 7.55385137e-06
+GAMG:  Solving for p, Initial residual = 0.105017558, Final residual = 7.19456184e-07, No Iterations 70
+time step continuity errors : sum local = 1.61492455e-09, global = 2.13697376e-11, cumulative = 7.55387274e-06
+ExecutionTime = 6.21 s  ClockTime = 14 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00188999985, Final residual = 3.43217996e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0303515487 Mz_kin=3.02279051e-24 conv=0.0255504878 cupC=48.7224756 wallFlux=1.98933515e-07
+Courant Number mean: 0.00512134546 max: 1.1580901
+deltaT = 0.0012592837
+Time = 0.0316108324
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.282027283, Final residual = 0.000177475984, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0395032821, Final residual = 0.000208941779, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0521846219, Final residual = 3.5615763e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.461845318, Final residual = 0.00435097752, No Iterations 23
+time step continuity errors : sum local = 4.01195072e-06, global = -1.53556285e-06, cumulative = 6.0183099e-06
+GAMG:  Solving for p, Initial residual = 0.102351524, Final residual = 7.70578506e-07, No Iterations 68
+time step continuity errors : sum local = 2.56257811e-09, global = 2.92027858e-11, cumulative = 6.0183391e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.399737137, Final residual = 8.51790413e-09, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0286016258, Final residual = 5.9749979e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0521127337, Final residual = 8.0352387e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.493049359, Final residual = 0.00470101387, No Iterations 23
+time step continuity errors : sum local = 5.13062188e-06, global = 1.96092101e-06, cumulative = 7.97926011e-06
+GAMG:  Solving for p, Initial residual = 0.100789907, Final residual = 8.35495304e-07, No Iterations 66
+time step continuity errors : sum local = 3.55490469e-09, global = -4.35460877e-11, cumulative = 7.97921656e-06
+ExecutionTime = 6.43 s  ClockTime = 14 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00208686494, Final residual = 3.728987e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0316108324 Mz_kin=2.97287721e-24 conv=0.0236130774 cupC=48.8193461 wallFlux=1.94478558e-07
+Courant Number mean: 0.00580312239 max: 1.05157487
+deltaT = 0.00147395612
+Time = 0.0330847885
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.428636339, Final residual = 0.000313582351, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0464799534, Final residual = 0.000276785121, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0802350788, Final residual = 7.79883558e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.492340345, Final residual = 0.00461259772, No Iterations 23
+time step continuity errors : sum local = 8.21142402e-06, global = -3.14753847e-06, cumulative = 4.83167809e-06
+GAMG:  Solving for p, Initial residual = 0.0997090501, Final residual = 5.69688139e-07, No Iterations 68
+time step continuity errors : sum local = 4.00792409e-09, global = 8.09178466e-11, cumulative = 4.83175901e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.602852309, Final residual = 3.50294063e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0648294125, Final residual = 2.10029258e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0988239647, Final residual = 9.63323562e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.513090344, Final residual = 0.00495320476, No Iterations 23
+time step continuity errors : sum local = 1.17737871e-05, global = 4.50465226e-06, cumulative = 9.33641127e-06
+GAMG:  Solving for p, Initial residual = 0.0973943535, Final residual = 8.3286672e-07, No Iterations 67
+time step continuity errors : sum local = 8.41222147e-09, global = 1.63798481e-11, cumulative = 9.33642765e-06
+ExecutionTime = 6.65 s  ClockTime = 15 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00232202528, Final residual = 8.09550647e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0330847885 Mz_kin=3.20775374e-24 conv=0.0286100034 cupC=48.5694998 wallFlux=1.89541758e-07
+Courant Number mean: 0.00701607642 max: 1.66280036
+deltaT = 0.00159556966
+Time = 0.0346803582
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.599486634, Final residual = 0.000552318094, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.082091283, Final residual = 0.000551272182, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.148705721, Final residual = 0.000229213167, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.500767962, Final residual = 0.00470075118, No Iterations 23
+time step continuity errors : sum local = 1.84343989e-05, global = -7.09074527e-06, cumulative = 2.24568238e-06
+GAMG:  Solving for p, Initial residual = 0.0996939661, Final residual = 6.08033933e-07, No Iterations 66
+time step continuity errors : sum local = 9.64993369e-09, global = 2.00636174e-10, cumulative = 2.24588302e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.765640472, Final residual = 5.32339192e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.150193469, Final residual = 6.34978351e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.195670855, Final residual = 1.93014531e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.519230809, Final residual = 0.00508888406, No Iterations 23
+time step continuity errors : sum local = 2.81486205e-05, global = 1.07878197e-05, cumulative = 1.30337027e-05
+GAMG:  Solving for p, Initial residual = 0.0967193619, Final residual = 7.21310485e-07, No Iterations 68
+time step continuity errors : sum local = 1.7500227e-08, global = -2.48526222e-10, cumulative = 1.30334542e-05
+ExecutionTime = 6.87 s  ClockTime = 15 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00239189991, Final residual = 4.91163575e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0346803582 Mz_kin=3.81936698e-24 conv=0.0497271783 cupC=47.5136411 wallFlux=1.84540398e-07
+Courant Number mean: 0.0088389095 max: 3.84177315
+deltaT = 0.000747730164
+Time = 0.0354280883
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.602433098, Final residual = 0.000465223531, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0854531233, Final residual = 0.000290147098, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.199631612, Final residual = 0.000232312781, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.40863441, Final residual = 0.00387756433, No Iterations 23
+time step continuity errors : sum local = 1.29152247e-05, global = -4.96643452e-06, cumulative = 8.06701967e-06
+GAMG:  Solving for p, Initial residual = 0.110504168, Final residual = 9.89258231e-07, No Iterations 68
+time step continuity errors : sum local = 9.27001487e-09, global = -7.87974124e-11, cumulative = 8.06694088e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.671978036, Final residual = 2.7326007e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0619907029, Final residual = 5.08405783e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.169003803, Final residual = 5.04776958e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.457211034, Final residual = 0.0044221296, No Iterations 23
+time step continuity errors : sum local = 1.1945081e-05, global = 4.55994731e-06, cumulative = 1.26268882e-05
+GAMG:  Solving for p, Initial residual = 0.110784597, Final residual = 7.19147554e-07, No Iterations 72
+time step continuity errors : sum local = 6.29418498e-09, global = 2.14235981e-11, cumulative = 1.26269096e-05
+ExecutionTime = 7.1 s  ClockTime = 15 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00107679873, Final residual = 3.64974219e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0354280883 Mz_kin=3.91416182e-24 conv=0.0643957178 cupC=46.7802141 wallFlux=1.82315838e-07
+Courant Number mean: 0.00448402348 max: 1.70128732
+deltaT = 0.000791281306
+Time = 0.0362193696
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.522365317, Final residual = 0.000503919432, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0671552653, Final residual = 0.000212145636, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.17883648, Final residual = 0.000248197999, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.392264039, Final residual = 0.00369497958, No Iterations 23
+time step continuity errors : sum local = 1.1084635e-05, global = -4.2791731e-06, cumulative = 8.34773651e-06
+GAMG:  Solving for p, Initial residual = 0.119452931, Final residual = 8.56757079e-07, No Iterations 70
+time step continuity errors : sum local = 6.40613344e-09, global = 2.34582153e-11, cumulative = 8.34775997e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.568877485, Final residual = 3.55063374e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0371745402, Final residual = 2.54649769e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.139349681, Final residual = 6.48871099e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.444623739, Final residual = 0.00422069831, No Iterations 23
+time step continuity errors : sum local = 9.62187971e-06, global = 3.68311875e-06, cumulative = 1.20308787e-05
+GAMG:  Solving for p, Initial residual = 0.119108646, Final residual = 7.91328724e-07, No Iterations 70
+time step continuity errors : sum local = 5.23895304e-09, global = 1.27339694e-11, cumulative = 1.20308915e-05
+ExecutionTime = 7.32 s  ClockTime = 15 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00110371454, Final residual = 2.06992837e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0362193696 Mz_kin=4.08017244e-24 conv=0.0762967764 cupC=46.1851612 wallFlux=1.80032469e-07
+Courant Number mean: 0.00496723388 max: 2.08542454
+deltaT = 0.000683047931
+Time = 0.0369024176
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.405468896, Final residual = 0.000381437366, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0383676113, Final residual = 0.000105042756, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.130358651, Final residual = 0.000170506898, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.372270064, Final residual = 0.00351199564, No Iterations 23
+time step continuity errors : sum local = 6.75327563e-06, global = -2.60848683e-06, cumulative = 9.42240463e-06
+GAMG:  Solving for p, Initial residual = 0.125765597, Final residual = 6.97345815e-07, No Iterations 72
+time step continuity errors : sum local = 2.98629465e-09, global = 3.31656707e-11, cumulative = 9.42243779e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.409385844, Final residual = 2.02886886e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0195420333, Final residual = 5.56569416e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0927063376, Final residual = 3.93133025e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.428939459, Final residual = 0.00407077224, No Iterations 23
+time step continuity errors : sum local = 5.37364977e-06, global = 2.05682061e-06, cumulative = 1.14792584e-05
+GAMG:  Solving for p, Initial residual = 0.122757236, Final residual = 8.71978078e-07, No Iterations 68
+time step continuity errors : sum local = 3.07781819e-09, global = 3.56960872e-11, cumulative = 1.14792941e-05
+ExecutionTime = 7.55 s  ClockTime = 15 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000919518031, Final residual = 1.40351992e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0369024176 Mz_kin=4.19422223e-24 conv=0.0792780714 cupC=46.0360964 wallFlux=1.78109385e-07
+Courant Number mean: 0.00427470321 max: 1.7910322
+deltaT = 0.000686455868
+Time = 0.0375888734
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.300243925, Final residual = 0.00025386545, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0294439604, Final residual = 8.30754338e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.089813607, Final residual = 0.00011045543, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.350832251, Final residual = 0.00343204956, No Iterations 23
+time step continuity errors : sum local = 4.3483963e-06, global = -1.67769654e-06, cumulative = 9.80159755e-06
+GAMG:  Solving for p, Initial residual = 0.124338344, Final residual = 7.10769707e-07, No Iterations 72
+time step continuity errors : sum local = 1.93859929e-09, global = 1.38619774e-11, cumulative = 9.80161142e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.287823655, Final residual = 1.05487786e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0111610484, Final residual = 3.11753314e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0611864001, Final residual = 2.13256972e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.413489487, Final residual = 0.00397758005, No Iterations 23
+time step continuity errors : sum local = 3.44170771e-06, global = 1.31686916e-06, cumulative = 1.11184806e-05
+GAMG:  Solving for p, Initial residual = 0.12197236, Final residual = 7.96572743e-07, No Iterations 70
+time step continuity errors : sum local = 1.78666997e-09, global = -3.16315413e-11, cumulative = 1.11184489e-05
+ExecutionTime = 7.77 s  ClockTime = 16 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000899554276, Final residual = 6.60075056e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0375888734 Mz_kin=4.18627759e-24 conv=0.0748807733 cupC=46.2559613 wallFlux=1.7621507e-07
+Courant Number mean: 0.0041689696 max: 1.80483438
+deltaT = 0.000684502935
+Time = 0.0382733764
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.214217765, Final residual = 0.000153745414, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0258712102, Final residual = 7.06207516e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.061285715, Final residual = 6.29123577e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.327990469, Final residual = 0.002856459, No Iterations 24
+time step continuity errors : sum local = 2.35513794e-06, global = -9.00646202e-07, cumulative = 1.02178027e-05
+GAMG:  Solving for p, Initial residual = 0.118908324, Final residual = 7.76920861e-07, No Iterations 73
+time step continuity errors : sum local = 1.38811125e-09, global = -5.90235789e-12, cumulative = 1.02177968e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.200429433, Final residual = 4.90346584e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00775642634, Final residual = 2.09701413e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0388725421, Final residual = 5.26617889e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.404383602, Final residual = 0.00389216201, No Iterations 23
+time step continuity errors : sum local = 2.15955316e-06, global = 8.25993074e-07, cumulative = 1.10437899e-05
+GAMG:  Solving for p, Initial residual = 0.121427972, Final residual = 8.24430628e-07, No Iterations 70
+time step continuity errors : sum local = 1.16987921e-09, global = 3.02780951e-12, cumulative = 1.10437929e-05
+ExecutionTime = 7.99 s  ClockTime = 16 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000877546345, Final residual = 3.5554775e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0382733764 Mz_kin=4.12026885e-24 conv=0.065271098 cupC=46.7364451 wallFlux=1.74362206e-07
+Courant Number mean: 0.00397907935 max: 1.67569208
+deltaT = 0.000735265003
+Time = 0.0390086414
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.155443535, Final residual = 0.000104307775, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0281900156, Final residual = 7.86119751e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0454078589, Final residual = 3.88362806e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.313255072, Final residual = 0.00281038038, No Iterations 24
+time step continuity errors : sum local = 1.66688311e-06, global = -6.35524458e-07, cumulative = 1.04082685e-05
+GAMG:  Solving for p, Initial residual = 0.11364574, Final residual = 8.50918559e-07, No Iterations 73
+time step continuity errors : sum local = 1.12873531e-09, global = 8.52608153e-12, cumulative = 1.0408277e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.156597579, Final residual = 2.77780182e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00582483827, Final residual = 1.73559063e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0273754937, Final residual = 2.93203815e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.400008057, Final residual = 0.00386099635, No Iterations 23
+time step continuity errors : sum local = 1.61867471e-06, global = 6.18680417e-07, cumulative = 1.10269574e-05
+GAMG:  Solving for p, Initial residual = 0.118165778, Final residual = 9.48104481e-07, No Iterations 69
+time step continuity errors : sum local = 1.0454212e-09, global = 8.2184607e-12, cumulative = 1.10269656e-05
+ExecutionTime = 8.22 s  ClockTime = 16 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000921646304, Final residual = 4.68120022e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0390086414 Mz_kin=3.99756941e-24 conv=0.0532971831 cupC=47.3351408 wallFlux=1.72413411e-07
+Courant Number mean: 0.00405888966 max: 1.57062526
+deltaT = 0.00081925947
+Time = 0.0398279008
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.138138802, Final residual = 8.44873947e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0308279458, Final residual = 9.82649221e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.037268439, Final residual = 2.63833706e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.318203863, Final residual = 0.00285752537, No Iterations 24
+time step continuity errors : sum local = 1.38733821e-06, global = -5.27420643e-07, cumulative = 1.0499545e-05
+GAMG:  Solving for p, Initial residual = 0.10879889, Final residual = 8.56753153e-07, No Iterations 70
+time step continuity errors : sum local = 1.00882238e-09, global = -1.98084329e-12, cumulative = 1.0499543e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.145153256, Final residual = 2.29739783e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00581490162, Final residual = 2.06458985e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0223222322, Final residual = 1.87456353e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.411913661, Final residual = 0.00392921783, No Iterations 23
+time step continuity errors : sum local = 1.47020952e-06, global = 5.61649427e-07, cumulative = 1.10611925e-05
+GAMG:  Solving for p, Initial residual = 0.114758994, Final residual = 6.3319256e-07, No Iterations 71
+time step continuity errors : sum local = 6.64456811e-10, global = -5.10767306e-12, cumulative = 1.10611873e-05
+ExecutionTime = 8.45 s  ClockTime = 16 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00100393492, Final residual = 9.62888749e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0398279008 Mz_kin=3.86693974e-24 conv=0.0416535736 cupC=47.9173213 wallFlux=1.70295089e-07
+Courant Number mean: 0.00428405059 max: 1.45033385
+deltaT = 0.000920586864
+Time = 0.0407484877
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.14463562, Final residual = 8.04107105e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0324708132, Final residual = 0.000120525988, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0342069518, Final residual = 1.97387376e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.350355066, Final residual = 0.00301983016, No Iterations 24
+time step continuity errors : sum local = 1.37996309e-06, global = -5.2365865e-07, cumulative = 1.05375287e-05
+GAMG:  Solving for p, Initial residual = 0.106056881, Final residual = 7.36028644e-07, No Iterations 69
+time step continuity errors : sum local = 9.13572688e-10, global = 6.25112578e-12, cumulative = 1.05375349e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.160317294, Final residual = 3.98300985e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00667747517, Final residual = 2.81045868e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0215169343, Final residual = 1.34236624e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.434485153, Final residual = 0.00408697108, No Iterations 23
+time step continuity errors : sum local = 1.60583793e-06, global = 6.13323918e-07, cumulative = 1.11508589e-05
+GAMG:  Solving for p, Initial residual = 0.111251653, Final residual = 9.69921342e-07, No Iterations 68
+time step continuity errors : sum local = 1.16511052e-09, global = -1.44071052e-11, cumulative = 1.11508445e-05
+ExecutionTime = 8.67 s  ClockTime = 17 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00109955779, Final residual = 1.31325133e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0407484877 Mz_kin=3.72043501e-24 conv=0.0321549191 cupC=48.392254 wallFlux=1.67982781e-07
+Courant Number mean: 0.00456788859 max: 1.30371252
+deltaT = 0.00104721781
+Time = 0.0417957055
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.171379129, Final residual = 9.32893327e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0336354541, Final residual = 0.000148658325, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0347830913, Final residual = 1.82533332e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.399395645, Final residual = 0.00388235234, No Iterations 23
+time step continuity errors : sum local = 1.9776789e-06, global = -7.55326694e-07, cumulative = 1.03955178e-05
+GAMG:  Solving for p, Initial residual = 0.104809684, Final residual = 8.04525022e-07, No Iterations 69
+time step continuity errors : sum local = 1.2613183e-09, global = 1.25589432e-11, cumulative = 1.03955303e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.211822768, Final residual = 2.68408967e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00940783718, Final residual = 4.94656534e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0255574384, Final residual = 1.86116654e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.45760963, Final residual = 0.00433737933, No Iterations 23
+time step continuity errors : sum local = 2.19839364e-06, global = 8.39120815e-07, cumulative = 1.12346511e-05
+GAMG:  Solving for p, Initial residual = 0.105589388, Final residual = 9.27747046e-07, No Iterations 71
+time step continuity errors : sum local = 1.6071803e-09, global = -7.68563444e-12, cumulative = 1.12346434e-05
+ExecutionTime = 8.89 s  ClockTime = 17 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.0012154222, Final residual = 3.51290284e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0417957055 Mz_kin=3.58100188e-24 conv=0.0255114618 cupC=48.7244269 wallFlux=1.65439301e-07
+Courant Number mean: 0.00496233997 max: 1.15772038
+deltaT = 0.00120985391
+Time = 0.0430055594
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.235291595, Final residual = 0.000138310752, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.033985771, Final residual = 0.000179439184, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0407739534, Final residual = 2.39383175e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.44883571, Final residual = 0.00425022007, No Iterations 23
+time step continuity errors : sum local = 3.03309325e-06, global = -1.15969807e-06, cumulative = 1.00749454e-05
+GAMG:  Solving for p, Initial residual = 0.102161138, Final residual = 8.43321859e-07, No Iterations 69
+time step continuity errors : sum local = 2.11326315e-09, global = -4.16022064e-12, cumulative = 1.00749412e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.323919688, Final residual = 6.90387704e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0161237617, Final residual = 3.0774995e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0375382993, Final residual = 5.17090628e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.485035857, Final residual = 0.00461435376, No Iterations 23
+time step continuity errors : sum local = 3.75978658e-06, global = 1.43642708e-06, cumulative = 1.15113683e-05
+GAMG:  Solving for p, Initial residual = 0.101400745, Final residual = 5.63899422e-07, No Iterations 67
+time step continuity errors : sum local = 1.74624774e-09, global = 1.50421556e-11, cumulative = 1.15113833e-05
+ExecutionTime = 9.11 s  ClockTime = 17 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00135995563, Final residual = 3.82267542e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0430055594 Mz_kin=3.46956865e-24 conv=0.0221692896 cupC=48.8915355 wallFlux=1.62614039e-07
+Courant Number mean: 0.00555604922 max: 1.02938487
+deltaT = 0.00142198282
+Time = 0.0444275422
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.360378631, Final residual = 0.000245988921, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0340233475, Final residual = 0.000201609722, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0583811366, Final residual = 4.69498998e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.486233392, Final residual = 0.0045613801, No Iterations 23
+time step continuity errors : sum local = 5.90306189e-06, global = -2.2598275e-06, cumulative = 9.25155585e-06
+GAMG:  Solving for p, Initial residual = 0.0995700752, Final residual = 7.93834602e-07, No Iterations 68
+time step continuity errors : sum local = 4.0110768e-09, global = 5.04036702e-11, cumulative = 9.25160625e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.516743616, Final residual = 7.54217295e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0367655914, Final residual = 1.00811283e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0693049566, Final residual = 6.1402549e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.508593973, Final residual = 0.00489311668, No Iterations 23
+time step continuity errors : sum local = 8.25076148e-06, global = 3.15489727e-06, cumulative = 1.24065035e-05
+GAMG:  Solving for p, Initial residual = 0.0975999633, Final residual = 7.03680622e-07, No Iterations 68
+time step continuity errors : sum local = 4.96992503e-09, global = -7.05165414e-11, cumulative = 1.2406433e-05
+ExecutionTime = 9.34 s  ClockTime = 17 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00154126304, Final residual = 8.09505103e-09, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0444275422 Mz_kin=3.49527049e-24 conv=0.0240098582 cupC=48.7995071 wallFlux=1.59447272e-07
+Courant Number mean: 0.00656702327 max: 1.19135526
+deltaT = 0.00163625421
+Time = 0.0460637964
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.541624176, Final residual = 0.000446744194, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0526035759, Final residual = 0.000330877988, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.107236497, Final residual = 0.000137258915, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.506100777, Final residual = 0.0047494027, No Iterations 23
+time step continuity errors : sum local = 1.39300768e-05, global = -5.34698579e-06, cumulative = 7.05944722e-06
+GAMG:  Solving for p, Initial residual = 0.0982167725, Final residual = 7.83152298e-07, No Iterations 68
+time step continuity errors : sum local = 9.53745841e-09, global = 3.54521932e-11, cumulative = 7.05948267e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.720571795, Final residual = 5.35427166e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0946866828, Final residual = 3.77158674e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.147778631, Final residual = 2.17847576e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.522496793, Final residual = 0.00511133646, No Iterations 23
+time step continuity errors : sum local = 2.15749932e-05, global = 8.26274935e-06, cumulative = 1.5322232e-05
+GAMG:  Solving for p, Initial residual = 0.0955041809, Final residual = 9.4137648e-07, No Iterations 68
+time step continuity errors : sum local = 1.77501164e-08, global = -2.80571431e-10, cumulative = 1.53219514e-05
+ExecutionTime = 9.55 s  ClockTime = 18 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00171161461, Final residual = 5.7587221e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0460637964 Mz_kin=4.0829219e-24 conv=0.0386775911 cupC=48.0661204 wallFlux=1.56018046e-07
+Courant Number mean: 0.00836899424 max: 2.9594097
+deltaT = 0.000994719712
+Time = 0.0470585162
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.616307217, Final residual = 0.000449550967, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0764057703, Final residual = 0.000338862988, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.170335963, Final residual = 0.00019310371, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.44366652, Final residual = 0.00418898389, No Iterations 23
+time step continuity errors : sum local = 1.50744867e-05, global = -5.79898161e-06, cumulative = 9.52296984e-06
+GAMG:  Solving for p, Initial residual = 0.104779531, Final residual = 6.44892913e-07, No Iterations 71
+time step continuity errors : sum local = 7.67285802e-09, global = 8.0294672e-11, cumulative = 9.52305014e-06
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.728411592, Final residual = 2.98717e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0800073051, Final residual = 1.24211204e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.176726573, Final residual = 7.44882954e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.481894889, Final residual = 0.00464350452, No Iterations 23
+time step continuity errors : sum local = 1.70915913e-05, global = 6.53608233e-06, cumulative = 1.60591325e-05
+GAMG:  Solving for p, Initial residual = 0.104870598, Final residual = 8.25835492e-07, No Iterations 69
+time step continuity errors : sum local = 1.11420793e-08, global = 2.49047453e-11, cumulative = 1.60591574e-05
+ExecutionTime = 9.77 s  ClockTime = 18 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00100552953, Final residual = 6.44265908e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0470585162 Mz_kin=4.66999821e-24 conv=0.0570420154 cupC=47.1478992 wallFlux=1.54051757e-07
+Courant Number mean: 0.00571771877 max: 2.31362754
+deltaT = 0.000774119808
+Time = 0.047832636
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.563290446, Final residual = 0.000469561704, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0654322063, Final residual = 0.00021262331, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.174062991, Final residual = 0.000213444205, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.402276941, Final residual = 0.0037742932, No Iterations 23
+time step continuity errors : sum local = 1.21307407e-05, global = -4.6713308e-06, cumulative = 1.13878266e-05
+GAMG:  Solving for p, Initial residual = 0.115882968, Final residual = 9.66764655e-07, No Iterations 70
+time step continuity errors : sum local = 8.20381589e-09, global = 7.48915615e-11, cumulative = 1.13879015e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.622729312, Final residual = 3.21846302e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.042713469, Final residual = 2.9385644e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.143815111, Final residual = 5.28207562e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.45171367, Final residual = 0.0043214211, No Iterations 23
+time step continuity errors : sum local = 1.07596396e-05, global = 4.1122089e-06, cumulative = 1.55001104e-05
+GAMG:  Solving for p, Initial residual = 0.115280112, Final residual = 9.95627878e-07, No Iterations 69
+time step continuity errors : sum local = 7.60719178e-09, global = 8.88012867e-11, cumulative = 1.55001992e-05
+ExecutionTime = 10 s  ClockTime = 18 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000764388258, Final residual = 3.91940352e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.047832636 Mz_kin=5.12556056e-24 conv=0.071384892 cupC=46.4307554 wallFlux=1.52575577e-07
+Courant Number mean: 0.00474834892 max: 1.88734147
+deltaT = 0.000738114236
+Time = 0.0485707502
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.46627592, Final residual = 0.000441095301, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0444085162, Final residual = 0.000130572773, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.143409349, Final residual = 0.000193021159, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.384157944, Final residual = 0.00360187083, No Iterations 23
+time step continuity errors : sum local = 8.68782158e-06, global = -3.35496622e-06, cumulative = 1.21452329e-05
+GAMG:  Solving for p, Initial residual = 0.123063468, Final residual = 9.6445481e-07, No Iterations 72
+time step continuity errors : sum local = 5.48936545e-09, global = -8.5828826e-11, cumulative = 1.21451471e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.494631054, Final residual = 2.73107685e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0230414224, Final residual = 7.0845171e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.108459409, Final residual = 4.71435398e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.439421432, Final residual = 0.00414904581, No Iterations 23
+time step continuity errors : sum local = 7.25137655e-06, global = 2.77561609e-06, cumulative = 1.49207632e-05
+GAMG:  Solving for p, Initial residual = 0.121493212, Final residual = 9.73665678e-07, No Iterations 68
+time step continuity errors : sum local = 4.75176157e-09, global = 1.82942832e-11, cumulative = 1.49207815e-05
+ExecutionTime = 10.22 s  ClockTime = 18 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000711968088, Final residual = 1.31498282e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0485707502 Mz_kin=5.26424332e-24 conv=0.0790870463 cupC=46.0456477 wallFlux=1.51201227e-07
+Courant Number mean: 0.00461627628 max: 1.9177565
+deltaT = 0.000692956482
+Time = 0.0492637067
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.356565908, Final residual = 0.000318653134, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.029161496, Final residual = 8.27434444e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.101498077, Final residual = 0.000129665965, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.36599527, Final residual = 0.00348944578, No Iterations 23
+time step continuity errors : sum local = 5.54407972e-06, global = -2.1404181e-06, cumulative = 1.27803634e-05
+GAMG:  Solving for p, Initial residual = 0.125582387, Final residual = 8.91607473e-07, No Iterations 72
+time step continuity errors : sum local = 3.12879113e-09, global = 4.85527944e-11, cumulative = 1.27804119e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.355391449, Final residual = 1.52447898e-07, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0141216886, Final residual = 4.23981257e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0726381469, Final residual = 2.7625579e-08, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.425036094, Final residual = 0.00404006025, No Iterations 23
+time step continuity errors : sum local = 4.43796923e-06, global = 1.69841172e-06, cumulative = 1.44788237e-05
+GAMG:  Solving for p, Initial residual = 0.122732229, Final residual = 8.56943271e-07, No Iterations 69
+time step continuity errors : sum local = 2.49484707e-09, global = 4.13817347e-11, cumulative = 1.4478865e-05
+ExecutionTime = 10.45 s  ClockTime = 18 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.00065176122, Final residual = 1.45144147e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0492637067 Mz_kin=5.25086211e-24 conv=0.0785485695 cupC=46.0725715 wallFlux=1.499325e-07
+Courant Number mean: 0.0042607023 max: 1.79516539
+deltaT = 0.000694982671
+Time = 0.0499586894
+
+PIMPLE: iteration 1
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.263335239, Final residual = 0.000204310532, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0216487303, Final residual = 6.29859212e-05, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0699709653, Final residual = 8.06442435e-05, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.345098615, Final residual = 0.00342894827, No Iterations 23
+time step continuity errors : sum local = 3.62229748e-06, global = -1.39551815e-06, cumulative = 1.30833469e-05
+GAMG:  Solving for p, Initial residual = 0.122493407, Final residual = 8.65935174e-07, No Iterations 72
+time step continuity errors : sum local = 1.99511579e-09, global = 6.59035605e-12, cumulative = 1.30833535e-05
+PIMPLE: iteration 2
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.253614609, Final residual = 7.71530793e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00894217578, Final residual = 2.60958228e-07, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0481216134, Final residual = 7.53235468e-07, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.410712024, Final residual = 0.00396988181, No Iterations 23
+time step continuity errors : sum local = 2.90743127e-06, global = 1.11172026e-06, cumulative = 1.41950737e-05
+GAMG:  Solving for p, Initial residual = 0.120757404, Final residual = 8.51104596e-07, No Iterations 69
+time step continuity errors : sum local = 1.6311016e-09, global = 2.73909805e-11, cumulative = 1.41951011e-05
+ExecutionTime = 10.67 s  ClockTime = 19 s
+
+scalarTransport execute: c
+DILUPBiCGStab:  Solving for c, Initial residual = 0.000642403685, Final residual = 1.05339863e-08, No Iterations 1
+scalarTransport: scalarTransport: c is converged.
+	initial-residual tolerance: 1
+	outer iteration: 1
+
+METRICS t=0.0499586894 Mz_kin=5.17906747e-24 conv=0.0713631298 cupC=46.4318435 wallFlux=1.48677322e-07
+End
+

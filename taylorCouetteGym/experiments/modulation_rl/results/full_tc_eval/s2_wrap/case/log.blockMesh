@@ -1,0 +1,96 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _d6aa836d-20260127 OPENFOAM=2506 patch=260127 version=2506
+Arch   : "LSB;label=32;scalar=64"
+Exec   : blockMesh
+Date   : Jul 28 2026
+Time   : 12:39:38
+Host   : salamander
+PID    : 24122
+--> FOAM Warning : 
+    From Foam::fileName Foam::cwd_L()
+    in file POSIX.C at line 554
+    PWD is not the cwd() - reverting to physical description
+I/O    : uncollated
+--> FOAM Warning : 
+    From Foam::fileName Foam::cwd_L()
+    in file POSIX.C at line 554
+    PWD is not the cwd() - reverting to physical description
+Case   : /home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/full_tc_eval/s2_wrap/case
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Creating block mesh from "system/blockMeshDict"
+--> FOAM IOWarning :
+    Found [v1012] 'convertToMeters' entry instead of 'scale' in dictionary "system/blockMeshDict"
+
+    This keyword is 174 months old.
+
+Creating block edges
+No non-planar block faces defined
+Creating topology blocks
+
+Creating topology patches - from boundary section
+
+Creating block mesh topology
+
+Check topology
+
+	Basic statistics
+		Number of internal faces : 1
+		Number of boundary faces : 10
+		Number of defined boundary faces : 10
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list (topological search)...
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale (1 1 1)
+    Block 0 cell size :
+        i : 0.000543499858 .. 2.50000152e-05
+        j : 0.0022158648 .. 0.0022158648
+        k : 0.0004233333 .. 0.0004233333
+
+    Block 1 cell size :
+        i : 0.000543499858 .. 2.50000152e-05
+        j : 0.0022158648 .. 0.0022158648
+        k : 0.000423333333 .. 0.000423333333
+
+No patch pairs to merge
+
+Writing polyMesh with 0 cellZones
+----------------
+Mesh Information
+----------------
+  boundingBox: (0.0253758248 -0.0013849155 -0.01905) (0.031719781 0.0013849155 0.17145)
+  nPoints: 34276
+  nCells: 16650
+  nFaces: 67087
+  nInternalFaces: 32813
+----------------
+Patches
+----------------
+  patch 0 (start: 32813 size: 450) name: inner_wall
+  patch 1 (start: 33263 size: 449) name: outer_wall
+  patch 2 (start: 33712 size: 1) name: side_outlet
+  patch 3 (start: 33713 size: 37) name: inlet
+  patch 4 (start: 33750 size: 37) name: bottom
+  patch 5 (start: 33787 size: 16650) name: front
+  patch 6 (start: 50437 size: 16650) name: back
+
+End
+

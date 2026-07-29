@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \    /   O peration     | Version:  v2506                                 |
+|   \  /    A nd           | Website:  www.openfoam.com                      |
+|    \/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      c;
+}
+// Limiting reactant concentration [mmol/m3].
+// Inlet c0=50; catalytic outer_wall c=0; side_outlet zeroGradient; bottom closed/no-flux.
+//
+// CHANGED from Yuhe's original (uniform 0): the reactor is PRE-FILLED at the feed
+// concentration c0=50 so each independent spin-sweep episode starts saturated. The
+// steady state is initial-condition independent, but a full start (a) avoids the
+// spurious conversion=1 window while an empty reactor fills and the outlet still
+// reads c~0, and (b) converges to the (expected small) steady conversion far faster
+// within the fixed episode length. This matches the wall-model case, which also
+// starts full (internalField 1), so both sweeps are pre-filled and comparable.
+dimensions      [0 -3 0 0 1 0 0];
+
+internalField   uniform 50;
+
+boundaryField
+{
+    inner_wall
+    {
+        type            zeroGradient;
+    }
+
+    outer_wall
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+
+    bottom
+    {
+        type            zeroGradient;
+    }
+
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 50;
+    }
+
+    side_outlet
+    {
+        type            zeroGradient;
+    }
+
+    front
+    {
+        type            wedge;
+    }
+
+    back
+    {
+        type            wedge;
+    }
+}
+
+// ************************************************************************* //

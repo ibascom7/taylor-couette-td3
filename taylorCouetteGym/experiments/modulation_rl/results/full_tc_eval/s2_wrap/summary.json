@@ -1,0 +1,19 @@
+{
+  "tag": "s2_wrap",
+  "clock": "wrap",
+  "checkpoint": "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/td3/mod_wb300_v5_s2/td3_tc_final",
+  "episode_duration": 300.0,
+  "block_dt": 10.0,
+  "n_blocks": 30,
+  "X_last": 0.8813418302396694,
+  "P_ep_W": 3.7763538903559284,
+  "R_minus": 0.7631090847682878,
+  "R_final_block": 0.7659385997432491,
+  "episode_return": 19.816753941837682,
+  "wallflux_max": 1.32e-08,
+  "p_max_watt": 31.94,
+  "ref_constant300_X": 0.786883,
+  "ref_constant300_R_minus": 0.669777,
+  "ref_pulsed300_X": 0.87645,
+  "ref_pulsed300_R_minus": 0.760477
+}

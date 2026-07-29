@@ -1,0 +1,19 @@
+{
+  "tag": "s2_stretch_smoke",
+  "clock": "stretch",
+  "checkpoint": "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/td3/mod_wb300_v5_s2/td3_tc_final",
+  "episode_duration": 4.0,
+  "block_dt": 2.0,
+  "n_blocks": 2,
+  "X_last": 0.12028705307700091,
+  "P_ep_W": 3.854928964748149,
+  "R_minus": -0.0004057761261346271,
+  "R_final_block": 0.005026941098027704,
+  "episode_return": -0.03618430115916302,
+  "wallflux_max": 1.32e-08,
+  "p_max_watt": 31.94,
+  "ref_constant300_X": 0.786883,
+  "ref_constant300_R_minus": 0.669777,
+  "ref_pulsed300_X": 0.87645,
+  "ref_pulsed300_R_minus": 0.760477
+}
