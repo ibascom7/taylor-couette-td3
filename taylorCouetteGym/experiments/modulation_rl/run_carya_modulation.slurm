@@ -44,7 +44,7 @@
 #
 # COST: v3 measured 308 episodes / 44 workers = 8.5 h wall PER SEED. Seeds run
 # as a JOB ARRAY (one whole node per task, like run_carya_parallel_graded's
-# energy-weight sweep) -> all three run IN PARALLEL, ~8.5 h each + ~2 min
+# energy-weight sweep) -> all tasks run IN PARALLEL, ~8.5 h each + ~2 min
 # template compile per task. -t 12 h covers a task; replay_buffer.npz +
 # SAVE_EVERY checkpoints make even an interrupted task a usable dataset.
 #
@@ -61,9 +61,13 @@
 #SBATCH --mem=8G                  # 44 solvers on the 3330-cell graded mesh are tiny
                                   #  (measured ~1.9 GB peak for 44 comparable solvers)
 #SBATCH -t 12:0:0                 # ~8.5 h measured (v3) per seed; margin for stragglers
-#SBATCH --array=0-2               # one task per SEED (three independent trainings in
-                                  #  parallel, one whole node each -- the same pattern
-                                  #  as run_carya_parallel_graded's ew sweep)
+#SBATCH --array=3-7               # one task per SEED (five independent trainings in
+                                  #  parallel, one whole node each). WAVE 2 (2026-07-31):
+                                  #  s0-s2 already ran (only s2 beat the 0.270 static
+                                  #  champion, R=0.281, and only narrowly) -- five fresh
+                                  #  seeds re-roll the ~2/3 per-seed convergence odds.
+                                  #  Indices continue from 3 so tags never collide with
+                                  #  the finished mod_wb300_v5_s0..s2 results.
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
 
@@ -72,9 +76,10 @@ set -euo pipefail
 # ---- run config -----------------------------------------------------
 ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
-# array index -> SEED (one whole-node task each). At ~75% surrogate pass-rate
-# per seed, three rolls give ~98% that at least one lands; seed 0 passes on
-# the surrogate at UTD=64 (0.971). Keep --array = 0-(n_seeds-1).
+# array index -> SEED (one whole-node task each). Real-CFD wave 1 landed 1/3
+# clean (s2) vs the surrogate's ~70% -- five more rolls (seeds 3-7) give good
+# odds of 1-3 additional converged policies for the seed-robustness claim.
+# Keep --array = <first_seed>-<last_seed>; indices double as seeds.
 SEED=${SLURM_ARRAY_TASK_ID:-0}
 TAG="mod_wb300_v5_s${SEED}"
 
