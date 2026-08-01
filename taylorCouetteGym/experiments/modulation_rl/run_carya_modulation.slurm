@@ -61,13 +61,15 @@
 #SBATCH --mem=8G                  # 44 solvers on the 3330-cell graded mesh are tiny
                                   #  (measured ~1.9 GB peak for 44 comparable solvers)
 #SBATCH -t 12:0:0                 # ~8.5 h measured (v3) per seed; margin for stragglers
-#SBATCH --array=3-7               # one task per SEED (five independent trainings in
+#SBATCH --array=3-9               # one task per SEED (seven independent trainings in
                                   #  parallel, one whole node each). WAVE 2 (2026-07-31):
                                   #  s0-s2 already ran (only s2 beat the 0.270 static
-                                  #  champion, R=0.281, and only narrowly) -- five fresh
-                                  #  seeds re-roll the ~2/3 per-seed convergence odds.
-                                  #  Indices continue from 3 so tags never collide with
-                                  #  the finished mod_wb300_v5_s0..s2 results.
+                                  #  champion, R=0.281, and only narrowly) -- seven fresh
+                                  #  seeds complete a 10-seed set under the identical
+                                  #  recipe, matching the surrogate's 10-seed protocol
+                                  #  (UTD=64: 7/10) for a direct surrogate-vs-real
+                                  #  pass-rate comparison. Indices continue from 3 so
+                                  #  tags never collide with mod_wb300_v5_s0..s2.
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
 
@@ -77,8 +79,8 @@ set -euo pipefail
 ALGO=td3
 N_WORKERS=44                     # 48-core node: leave ~4 cores for the learner + OS
 # array index -> SEED (one whole-node task each). Real-CFD wave 1 landed 1/3
-# clean (s2) vs the surrogate's ~70% -- five more rolls (seeds 3-7) give good
-# odds of 1-3 additional converged policies for the seed-robustness claim.
+# clean (s2) vs the surrogate's ~70% -- seeds 3-9 bring the real-CFD total to
+# n=10 under the identical recipe for the seed-robustness claim.
 # Keep --array = <first_seed>-<last_seed>; indices double as seeds.
 SEED=${SLURM_ARRAY_TASK_ID:-0}
 TAG="mod_wb300_v5_s${SEED}"
