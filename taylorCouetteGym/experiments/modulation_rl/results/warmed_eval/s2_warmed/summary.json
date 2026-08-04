@@ -1,0 +1,18 @@
+{
+  "tag": "s2_warmed",
+  "checkpoint": "/home/ibascom/research/taylor-couette-td3/taylorCouetteGym/experiments/modulation_rl/results/td3/mod_wb300_v5_s2/td3_tc_final",
+  "episode_return": 1.2994202766144411,
+  "x_last": 0.4082692282255127,
+  "p_ep_watt": 3.75195987747371,
+  "r_minus": 0.2908002276784335,
+  "benchmarks_warmed_wb300_t50": {
+    "pulsed T=2.5 D=80%": 0.2714,
+    "pulsed T=10 D=80%": 0.2651,
+    "constant 300": 0.239
+  },
+  "benchmarks_warmed_wb300_60s": {
+    "pulsed T=2.5 D=80%": 0.2844,
+    "pulsed T=10 D=80%": 0.2674,
+    "constant 300": 0.2374
+  }
+}
