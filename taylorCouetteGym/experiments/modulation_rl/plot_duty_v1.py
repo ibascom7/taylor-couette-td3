@@ -276,7 +276,66 @@ def fig_diag_explainer():
     print(f"wrote {out}")
 
 
+# ------------------------------------------------- clean single panels -----
+def fig_diag_clean():
+    """Annotation-free standalone versions of the explainer's panels (a) and
+    (b) -> results/duty_diag/{landscape_reward_vs_D,idle_law}.png."""
+    stat = {}
+    for row in csv.DictReader(open(os.path.join(DIAG_DIR, "summary.csv"))):
+        stat[row["tag"]] = {k: float(v) for k, v in row.items() if k != "tag"}
+    probe = [{**{k: float(v) for k, v in r.items() if k != "tag"}, "tag": r["tag"]}
+             for r in csv.DictReader(open(os.path.join(DIAG_DIR, "probe2_summary.csv")))]
+
+    d_grid = [0.2, 0.35, 0.5, 0.65, 0.8, 0.9, 1.0]
+    curve = {d: stat[f"static_D{d:.2f}"]["last_r"] for d in d_grid}
+    for r in probe:
+        if r["period"] == 5.0:
+            curve[r["duty"]] = r["last_r"]
+    ds = sorted(curve)
+
+    fig, ax = plt.subplots(figsize=(6.4, 4.6))
+    ax.plot(ds, [curve[d] for d in ds], "-o", color="tab:blue", ms=6, lw=1.8)
+    ax.set_xlabel("duty D")
+    ax.set_ylabel("last-block reward  $X - P/P_{max}$")
+    ax.set_title("Sustained reward vs duty (T = 5 s, warmed)", fontsize=11)
+    ax.grid(alpha=0.25)
+    fig.tight_layout()
+    out = os.path.join(DIAG_DIR, "landscape_reward_vs_D.png")
+    fig.savefig(out, dpi=180)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+    series = {2.5: ([], []), 5.0: ([], []), 10.0: ([], [])}
+    for d in d_grid:
+        series[5.0][0].append((1 - d) * 5.0)
+        series[5.0][1].append(curve[d])
+    for r in probe:
+        series[r["period"]][0].append(r["idle_s"])
+        series[r["period"]][1].append(r["last_r"])
+    styles = {2.5: dict(marker="s", ms=11, ls="none", mfc="none", mew=2.0,
+                        color="tab:purple", zorder=6),
+              5.0: dict(marker="o", ms=6, ls="-", lw=1.8, color="tab:blue"),
+              10.0: dict(marker="D", ms=9, ls="none", mfc="none", mew=2.0,
+                         color="tab:orange", zorder=6)}
+    fig, ax = plt.subplots(figsize=(6.4, 4.6))
+    for T in (2.5, 5.0, 10.0):
+        xs, ys = series[T]
+        o = np.argsort(xs)
+        ax.plot(np.array(xs)[o], np.array(ys)[o], label=f"T = {T:g} s", **styles[T])
+    ax.set_xlabel("idle duration per period  $(1-D)\\,T$  [s]")
+    ax.set_ylabel("last-block reward  $X - P/P_{max}$")
+    ax.set_title("Sustained reward vs idle duration (warmed)", fontsize=11)
+    ax.legend(fontsize=9, framealpha=0.9)
+    ax.grid(alpha=0.25)
+    fig.tight_layout()
+    out = os.path.join(DIAG_DIR, "idle_law.png")
+    fig.savefig(out, dpi=180)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
 if __name__ == "__main__":
     fig_eval_omega()
     fig_learning_curves()
     fig_diag_explainer()
+    fig_diag_clean()
