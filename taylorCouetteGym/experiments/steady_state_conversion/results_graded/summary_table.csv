@@ -1,0 +1,6 @@
+case,label,rpm,omega_rad_s,Re,conversion_steady,conversion_final,steady_drift,converged,diverged,power_motor_W,power_visc_cfd_W,wall_minutes
+side_outlet_case_sc107_graded,"Graded mesh, Sc=107.5 (25 um wall cell)",0,0.0000,0.0,0.535222,0.556549,6.306e-03,1,0,0,0,nan
+side_outlet_case_sc107_graded,"Graded mesh, Sc=107.5 (25 um wall cell)",250,26.1799,392.7,0.820128,0.828791,3.192e-04,1,0,3.15203,0.01861,nan
+side_outlet_case_sc107_graded,"Graded mesh, Sc=107.5 (25 um wall cell)",500,52.3599,785.4,0.838516,0.838516,5.081e-03,1,0,6.10794,0.115222,nan
+side_outlet_case_sc107_graded,"Graded mesh, Sc=107.5 (25 um wall cell)",750,78.5398,1178.1,0.843707,0.843991,3.139e-04,1,0,9.10452,0.323478,nan
+side_outlet_case_sc107_graded,"Graded mesh, Sc=107.5 (25 um wall cell)",1000,104.7198,1570.8,0.852616,0.852527,7.682e-04,1,0,12.1504,0.639905,nan

@@ -1,0 +1,6 @@
+case,label,rpm,omega_rad_s,Re,conversion_steady,conversion_final,steady_drift,converged,diverged,power_motor_W,power_visc_cfd_W,wall_minutes
+side_outlet_case_bottomavg,"Original, bottom-cells cOut",0,0.0000,0.0,0.000976844,0.000976844,0.000e+00,1,0,0,0,nan
+side_outlet_case_bottomavg,"Original, bottom-cells cOut",250,26.1799,392.7,0.00942219,0.00940674,3.072e-05,1,0,3.15203,0.0182955,nan
+side_outlet_case_bottomavg,"Original, bottom-cells cOut",500,52.3599,785.4,0.00429219,0.00421339,1.299e-04,1,0,6.10794,0.104785,nan
+side_outlet_case_bottomavg,"Original, bottom-cells cOut",750,78.5398,1178.1,0.00143889,0.00142109,3.339e-05,1,0,9.10452,0.292223,nan
+side_outlet_case_bottomavg,"Original, bottom-cells cOut",1000,104.7198,1570.8,0.0171253,0.0172491,1.626e-04,1,0,12.1504,0.641394,nan

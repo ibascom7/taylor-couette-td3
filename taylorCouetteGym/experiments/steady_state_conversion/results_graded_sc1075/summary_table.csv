@@ -1,0 +1,8 @@
+case,label,rpm,omega_rad_s,Re,conversion_steady,conversion_final,steady_drift,converged,diverged,power_motor_W,power_visc_cfd_W,wall_minutes
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",0,0.0000,0.0,0.145517,0.159543,7.750e-03,1,0,0,0,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",250,26.1799,392.7,0.347078,0.355147,5.223e-04,1,0,3.15203,0.01861,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",400,41.8879,628.3,0.407131,0.399513,1.960e-03,1,0,4.92118,0.0648672,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",500,52.3599,785.4,0.415715,0.422954,1.666e-03,1,0,6.10794,0.115222,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",750,78.5398,1178.1,0.459447,0.456188,6.227e-04,1,0,9.10452,0.323478,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",1000,104.7198,1570.8,0.486589,0.496905,1.642e-03,1,0,12.1504,0.639905,nan
+side_outlet_case_sc1075_graded,"Graded mesh, Sc=1075 (25 um wall cell)",2500,261.7994,3927.0,0.568097,0.567978,2.513e-03,1,0,31.9427,5.26278,nan

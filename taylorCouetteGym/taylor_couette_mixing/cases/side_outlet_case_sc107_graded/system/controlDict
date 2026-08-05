@@ -1,0 +1,280 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+
+application     pimpleFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         180;
+
+deltaT          0.01;
+
+writeControl    adjustableRunTime;
+
+writeInterval   10;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression no;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable no;
+
+adjustTimeStep  yes;
+
+maxCo           1.8;
+
+maxDeltaT       0.05;
+
+functions
+{
+    scalarTransport
+    {
+        type            scalarTransport;
+        libs            ( solverFunctionObjects );
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+        field           c;
+        resetOnStartUp  false;
+        schemesField    c;
+        D               1e-07;
+        nCorr           1;
+    }
+    sideOutletConversion
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            sideOutletConversion;
+        executeControl  adjustableRunTime;
+        executeInterval 1;
+        writeControl    adjustableRunTime;
+        writeInterval   1;
+        codeInclude     #{
+            #include "fvCFD.H"
+            #include <fstream>
+        #};
+        codeOptions     #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+        codeLibs        #{
+            -lfiniteVolume
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = refCast<const fvMesh>(obr_);
+            const volScalarField& c = mesh.lookupObject<volScalarField>("c");
+            const surfaceScalarField& phi = mesh.lookupObject<surfaceScalarField>("phi");
+
+            const word patchName("side_outlet");
+            const label patchI = mesh.boundaryMesh().findPatchID(patchName);
+            if (patchI < 0)
+            {
+                FatalErrorInFunction << "Patch " << patchName << " was not found." << exit(FatalError);
+            }
+
+            const scalar c0 = 50.0;
+            const fvPatchScalarField& cp = c.boundaryField()[patchI];
+            const fvsPatchScalarField& phip = phi.boundaryField()[patchI];
+
+            scalar sumOutPhi = 0.0;
+            scalar sumOutPhiC = 0.0;
+
+            forAll(cp, faceI)
+            {
+                const scalar phif = phip[faceI];
+                if (phif > 0.0)
+                {
+                    sumOutPhi  += phif;
+                    sumOutPhiC += phif*cp[faceI];
+                }
+            }
+
+            reduce(sumOutPhi, sumOp<scalar>());
+            reduce(sumOutPhiC, sumOp<scalar>());
+
+            const scalar cOut = sumOutPhiC/max(sumOutPhi, VSMALL);
+            const scalar conversion = 1.0 - cOut/c0;
+
+            fileName outDir = mesh.time().path()/"postProcessing"/"sideOutletConversion"/"0";
+            mkDir(outDir);
+            fileName outFile = outDir/"outletConversion.dat";
+
+            std::ios_base::openmode mode = std::ios::app;
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                mode = std::ios::out;
+            }
+
+            std::ofstream os(outFile.c_str(), mode);
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                os << "# time cOutlet_mmol_per_m3 conversion sumOutPhi_m3_per_s patch" << std::endl;
+            }
+
+            os  << mesh.time().value() << ' '
+                << cOut << ' '
+                << conversion << ' '
+                << sumOutPhi << ' '
+                << patchName << std::endl;
+
+            Info<< "SIDE_OUTLET_CONVERSION"
+                << " t=" << mesh.time().value()
+                << " cOut=" << cOut
+                << " conversion=" << conversion
+                << " outPhi=" << sumOutPhi
+                << " file=" << outFile
+                << nl;
+        #};
+    }
+    rotationalPower_innerWall
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            rotationalPower_innerWall;
+        executeControl  adjustableRunTime;
+        executeInterval 1;
+        writeControl    adjustableRunTime;
+        writeInterval   1;
+        codeInclude     #{
+            #include "fvCFD.H"
+            #include <fstream>
+        #};
+        codeOptions     #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+        codeLibs        #{
+            -lfiniteVolume
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = refCast<const fvMesh>(obr_);
+            const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+
+            const label patchI = mesh.boundaryMesh().findPatchID("inner_wall");
+            if (patchI < 0)
+            {
+                FatalErrorInFunction << "Patch inner_wall was not found." << exit(FatalError);
+            }
+
+            IOdictionary transportProperties
+            (
+                IOobject
+                (
+                    "transportProperties",
+                    mesh.time().constant(),
+                    mesh,
+                    IOobject::MUST_READ_IF_MODIFIED,
+                    IOobject::NO_WRITE
+                )
+            );
+
+            const dimensionedScalar nuDim("nu", dimViscosity, transportProperties);
+            const dimensionedScalar rhoDim("rho", dimDensity, transportProperties);
+            const scalar nu = nuDim.value();
+            const scalar rho = rhoDim.value();
+
+            const scalar fullScale = 72.0;
+
+            const fvPatch& p = mesh.boundary()[patchI];
+            const vectorField& Cf = p.Cf();
+            const scalarField& magSf = p.magSf();
+
+            const volTensorField gradU(fvc::grad(U));
+            const fvPatchTensorField& gradUp = gradU.boundaryField()[patchI];
+            const fvPatchVectorField& Uw = U.boundaryField()[patchI];
+
+            scalar MzWedge = 0.0;
+            scalar sumOmegaA = 0.0;
+            scalar sumA = 0.0;
+
+            forAll(Cf, faceI)
+            {
+                const scalar x = Cf[faceI].x();
+                const scalar y = Cf[faceI].y();
+                const scalar r = sqrt(sqr(x) + sqr(y));
+
+                if (r > SMALL)
+                {
+                    const vector eTheta(-y/r, x/r, 0.0);
+                    const scalar Af = magSf[faceI];
+                    const vector nHat = p.Sf()[faceI]/Af;
+
+                    const tensor grad = gradUp[faceI];
+                    const vector traction = rho*nu*((grad + grad.T()) & nHat);
+
+                    MzWedge += ((Cf[faceI] ^ (traction*Af)) & vector(0, 0, 1));
+                    sumOmegaA += ((Uw[faceI] & eTheta)/r)*Af;
+                    sumA += Af;
+                }
+            }
+
+            reduce(MzWedge, sumOp<scalar>());
+            reduce(sumOmegaA, sumOp<scalar>());
+            reduce(sumA, sumOp<scalar>());
+
+            const scalar Omega = sumOmegaA/max(sumA, VSMALL);
+            const scalar P_wedge = mag(MzWedge*Omega);
+            const scalar P_full = fullScale*P_wedge;
+
+            fileName outDir = mesh.time().path()/"postProcessing"/"rotationalPower_innerWall"/"0";
+            mkDir(outDir);
+            fileName outFile = outDir/"rotationalPower.dat";
+
+            std::ios_base::openmode mode = std::ios::app;
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                mode = std::ios::out;
+            }
+
+            std::ofstream os(outFile.c_str(), mode);
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                os << "# time Omega_rad_per_s Mz_wedge_Nm P_wedge_W P_full_360deg_W rho_kg_per_m3 nu_m2_per_s fullScale" << std::endl;
+            }
+
+            os  << mesh.time().value() << ' '
+                << Omega << ' '
+                << MzWedge << ' '
+                << P_wedge << ' '
+                << P_full << ' '
+                << rho << ' '
+                << nu << ' '
+                << fullScale << std::endl;
+
+            Info<< "ROTATIONAL_POWER"
+                << " t=" << mesh.time().value()
+                << " Omega=" << Omega
+                << " Mz_wedge=" << MzWedge
+                << " P_full=" << P_full
+                << " file=" << outFile
+                << nl;
+        #};
+    }
+}
+
+
+// ************************************************************************* //

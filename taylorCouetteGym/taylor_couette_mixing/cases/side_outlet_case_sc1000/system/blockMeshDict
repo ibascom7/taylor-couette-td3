@@ -1,0 +1,138 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \    /   O peration     | Version:  v2506                                 |
+|   \  /    A nd           | Website:  www.openfoam.com                      |
+|    \/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+
+// Top-face inlet + closed bottom face + bottom outer-wall side outlet.
+// Device height = 1/5 full H = 0.03810000 m.
+// z range: -0.01905000 to 0.01905000.
+// Total axial cells unchanged: Nz = 90.
+// side_outlet height = 1 z-cell = 0.0004233333 m.
+// Reactor radii: Ri=0.02540000 m, Ro=0.03175000 m, gap d=0.00635000 m.
+// 5 degree wedge.
+
+convertToMeters 1;
+
+vertices
+(
+    ( 0.0253758248 -0.0011079324 -0.0190500000)    // 0
+    ( 0.0317197810 -0.0013849155 -0.0190500000)    // 1
+    ( 0.0317197810  0.0013849155 -0.0190500000)    // 2
+    ( 0.0253758248  0.0011079324 -0.0190500000)    // 3
+
+    ( 0.0253758248 -0.0011079324 -0.0186266667)    // 4
+    ( 0.0317197810 -0.0013849155 -0.0186266667)    // 5
+    ( 0.0317197810  0.0013849155 -0.0186266667)    // 6
+    ( 0.0253758248  0.0011079324 -0.0186266667)    // 7
+
+    ( 0.0253758248 -0.0011079324  0.0190500000)    // 8
+    ( 0.0317197810 -0.0013849155  0.0190500000)    // 9
+    ( 0.0317197810  0.0013849155  0.0190500000)    // 10
+    ( 0.0253758248  0.0011079324  0.0190500000)    // 11
+);
+
+blocks
+(
+    // Bottom side-outlet band: 1 axial cell.
+    hex (0 1 2 3 4 5 6 7) (15 1 1) simpleGrading (1 1 1)
+
+    // Main reactor section: remaining 89 axial cells.
+    hex (4 5 6 7 8 9 10 11) (15 1 89) simpleGrading (1 1 1)
+);
+
+edges
+(
+    arc 0 3 ( 0.0254000000 0 -0.0190500000)
+    arc 1 2 ( 0.0317500000 0 -0.0190500000)
+
+    arc 4 7 ( 0.0254000000 0 -0.0186266667)
+    arc 5 6 ( 0.0317500000 0 -0.0186266667)
+
+    arc 8 11 ( 0.0254000000 0  0.0190500000)
+    arc 9 10 ( 0.0317500000 0  0.0190500000)
+);
+
+boundary
+(
+    inner_wall
+    {
+        type wall;
+        faces
+        (
+            (0 4 7 3)
+            (4 8 11 7)
+        );
+    }
+
+    outer_wall
+    {
+        type wall;
+        faces
+        (
+            (5 6 10 9)
+        );
+    }
+
+    side_outlet
+    {
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (8 9 10 11)
+        );
+    }
+
+    bottom
+    {
+        type wall;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+
+    front
+    {
+        type wedge;
+        faces
+        (
+            (0 1 5 4)
+            (4 5 9 8)
+        );
+    }
+
+    back
+    {
+        type wedge;
+        faces
+        (
+            (3 7 6 2)
+            (7 11 10 6)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //

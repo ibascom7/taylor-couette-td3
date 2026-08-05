@@ -27,3 +27,30 @@ taylorCouetteGym/results/**/frames/
 .venv/
 **/frames*/
 **/paraview/
+
+# --- OpenFOAM result-case clones under experiments/ (2026-08-04) -----------
+# Time folders, meshes, templates: tens of GB, all regenerable from the
+# tracked master cases + sweep scripts. The sibling CSVs / PNGs / .npy logs
+# (the science record) stay tracked. Deliberately scoped to experiments/ so
+# the MASTER cases under taylor_couette_mixing/cases/ are never matched.
+taylorCouetteGym/experiments/**/side_outlet_case*/
+taylorCouetteGym/experiments/**/side_outlet_grad_case/
+taylorCouetteGym/experiments/**/full_tc_grad_case/
+taylorCouetteGym/experiments/**/rpm_*/
+taylorCouetteGym/experiments/**/constant_wb*/
+taylorCouetteGym/experiments/**/pulsed_wb*/
+taylorCouetteGym/experiments/**/_template/
+taylorCouetteGym/experiments/**/case/
+taylorCouetteGym/experiments/**/case_work/
+taylorCouetteGym/experiments/**/workers/
+**/dynamicCode/
+**/processor[0-9]*/
+
+# OpenFOAM solver/utility logs (regenerable; log.pimpleFoam can exceed
+# GitHub's hard 100 MB per-file cap)
+log.pimpleFoam
+log.blockMesh
+log.checkMesh
+log.warmup
+log.compile
+log.err

@@ -1,0 +1,11 @@
+case,label,rpm,omega_rad_s,Re,conversion_steady,conversion_final,steady_drift,converged,diverged,power_motor_W,power_visc_cfd_W,wall_minutes
+side_outlet_case,Original (resolved-gradient wall),0,0.0000,0.0,0.0133131,0.0133131,0.000e+00,1,0,0,0,nan
+side_outlet_case,Original (resolved-gradient wall),250,26.1799,392.7,0.0206705,0.0206705,6.140e-07,1,0,3.15203,0.0182955,nan
+side_outlet_case,Original (resolved-gradient wall),500,52.3599,785.4,0.0206324,0.0205821,2.291e-05,1,0,6.10794,0.104785,nan
+side_outlet_case,Original (resolved-gradient wall),750,78.5398,1178.1,0.0201685,0.020169,1.937e-06,1,0,9.10452,0.292223,nan
+side_outlet_case,Original (resolved-gradient wall),1000,104.7198,1570.8,0.0205941,0.0208379,1.767e-04,1,0,12.1504,0.641394,nan
+side_outlet_cat_wallmodel,Wall model (Sherwood sink),0,0.0000,0.0,0.000695032,0.000695032,5.825e-05,1,0,0,0,nan
+side_outlet_cat_wallmodel,Wall model (Sherwood sink),250,26.1799,392.7,0.0923334,0.092476,1.669e-04,1,0,3.15203,0.0182688,nan
+side_outlet_cat_wallmodel,Wall model (Sherwood sink),500,52.3599,785.4,0.14322,0.143286,4.239e-04,1,0,6.10794,0.104512,nan
+side_outlet_cat_wallmodel,Wall model (Sherwood sink),750,78.5398,1178.1,0.179745,0.179648,9.867e-04,1,0,9.10452,0.313767,nan
+side_outlet_cat_wallmodel,Wall model (Sherwood sink),1000,104.7198,1570.8,0.211557,0.212217,1.082e-03,1,0,12.1504,0.639439,nan

@@ -1,0 +1,2 @@
+mode,wb_rpm,duty,peak_rpm,X_conv_lastperiod,conv_final,conv_episode_mean,P_motor_W,P_over_Pmax,R_minus (X - P/Pmax),R_plus (X + P/Pmax),P_visc_cfd_W,omega_meas_peak_rpm,omega_meas_mean_rpm,diverged,wall_minutes
+pulsed,300,0.80,375,0.388726,0.391404,0.302079,3.73506,0.11694,0.271786,0.505666,0.0435847,375.0,299.6,0,nan

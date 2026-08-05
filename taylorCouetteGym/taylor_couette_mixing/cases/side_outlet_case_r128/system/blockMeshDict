@@ -1,0 +1,143 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2506                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+
+// FINE, UNIFORM (ungraded) mesh version of side_outlet_case. Same geometry as the
+// coarse case; ONLY the cell counts change. simpleGrading (1 1 1) everywhere -> no
+// grading (uniform spacing), by request.
+//
+// Reactor radii: Ri=0.02540 m, Ro=0.03175 m, gap d=0.00635 m.  z: -0.019050..0.019050.
+// side_outlet band = 1 axial cell (0.0004233333 m tall).
+//
+//   NR = radial cells across the gap    -> Dr = 6.35 mm / NR
+//   NZ = axial cells in the main block   -> Dz = 37.677 mm / NZ
+// Coarse case was NR=15 (Dr=423 um), NZ=89 (Dz=423 um). Bump NR/NZ below to refine.
+// (Uniform mesh => the near-outer-wall cell is Dr; the Sc~1e4 concentration film is
+//  ~17-45 um, so only NR >~ 300 begins to resolve it -- see the experiment README.)
+
+convertToMeters 1;
+
+vertices
+(
+    ( 0.0253758248 -0.0011079324 -0.0190500000)    // 0
+    ( 0.0317197810 -0.0013849155 -0.0190500000)    // 1
+    ( 0.0317197810  0.0013849155 -0.0190500000)    // 2
+    ( 0.0253758248  0.0011079324 -0.0190500000)    // 3
+
+    ( 0.0253758248 -0.0011079324 -0.0186266667)    // 4
+    ( 0.0317197810 -0.0013849155 -0.0186266667)    // 5
+    ( 0.0317197810  0.0013849155 -0.0186266667)    // 6
+    ( 0.0253758248  0.0011079324 -0.0186266667)    // 7
+
+    ( 0.0253758248 -0.0011079324  0.0190500000)    // 8
+    ( 0.0317197810 -0.0013849155  0.0190500000)    // 9
+    ( 0.0317197810  0.0013849155  0.0190500000)    // 10
+    ( 0.0253758248  0.0011079324  0.0190500000)    // 11
+);
+
+blocks
+(
+    // Bottom side-outlet band: 1 axial cell. NR radial cells, uniform.
+    hex (0 1 2 3 4 5 6 7) (128 1 1) simpleGrading (1 1 1)
+
+    // Main reactor section: NZ axial cells. NR radial cells, uniform.
+    hex (4 5 6 7 8 9 10 11) (128 1 120) simpleGrading (1 1 1)
+);
+
+edges
+(
+    arc 0 3 ( 0.0254000000 0 -0.0190500000)
+    arc 1 2 ( 0.0317500000 0 -0.0190500000)
+
+    arc 4 7 ( 0.0254000000 0 -0.0186266667)
+    arc 5 6 ( 0.0317500000 0 -0.0186266667)
+
+    arc 8 11 ( 0.0254000000 0  0.0190500000)
+    arc 9 10 ( 0.0317500000 0  0.0190500000)
+);
+
+boundary
+(
+    inner_wall
+    {
+        type wall;
+        faces
+        (
+            (0 4 7 3)
+            (4 8 11 7)
+        );
+    }
+
+    outer_wall
+    {
+        type wall;
+        faces
+        (
+            (5 6 10 9)
+        );
+    }
+
+    side_outlet
+    {
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (8 9 10 11)
+        );
+    }
+
+    bottom
+    {
+        type wall;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+
+    front
+    {
+        type wedge;
+        faces
+        (
+            (0 1 5 4)
+            (4 5 9 8)
+        );
+    }
+
+    back
+    {
+        type wedge;
+        faces
+        (
+            (3 7 6 2)
+            (7 11 10 6)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //
