@@ -21,9 +21,14 @@
 #   RANDOM PHASE = 200 EPISODES (start_timesteps 1000 ~ 200 eps at the
 #   mean 5-block horizon; the v5 split). Action repeat x2 (52 s holds = 2 tau).
 #
-# PRE-REGISTERED SUCCESS CRITERION (2026-08-05, before results): the run
-# counts as "RL discovers the law" iff deterministic sustained last-block
-# r >= 0.2886 - flutter AND converged T- ~ 0.5 s.
+# PRE-REGISTERED SUCCESS CRITERION (2026-08-05, amended same day BEFORE any
+# v3 data existed): success = deterministic sustained last-block reward
+# matches or beats the best measured static comparator (duty_v3_refs) within
+# the measured noise floor. The converged waveform (T+, T-) is REPORTED, not
+# preconditioned -- whether it lands at the idle-duration-hypothesis value
+# (T- ~ 0.5 s) or somewhere else equally good is itself the finding. (The
+# original gate required T- ~ 0.5 s; that baked an n=3 hypothesis into the
+# success criterion of the experiment meant to test it independently.)
 #
 # Horizon stays RANDOMIZED U[3,7] blocks (mean 5 = the nominal episode;
 # fixed horizons would leave late-t states ungrounded -- see the v2 docs).
