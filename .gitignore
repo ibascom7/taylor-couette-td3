@@ -40,6 +40,10 @@ taylorCouetteGym/experiments/**/rpm_*/
 taylorCouetteGym/experiments/**/constant_wb*/
 taylorCouetteGym/experiments/**/pulsed_wb*/
 taylorCouetteGym/experiments/**/_template/
+taylorCouetteGym/experiments/**/_tpl_*/
+# finals baseline grids: episode case clones are results/<tag>/ DIRS; the flat
+# CSV / PNG summaries beside them stay tracked.
+taylorCouetteGym/experiments/finals_*/results/*/
 taylorCouetteGym/experiments/**/case/
 taylorCouetteGym/experiments/**/case_work/
 taylorCouetteGym/experiments/**/workers/
