@@ -9,7 +9,8 @@
 #   0  champ_D90_T5     0->333 rpm  D=0.90 T=5 s
 #   1  champ_D80_T2p5   0->375 rpm  D=0.80 T=2.5 s
 #   2  shimmy_D63_T5    0->476 rpm  D=0.63 T=5 s   (the policy's plateau)
-# COST ~22-30 h each on one core. --resume makes a walltime kill
+# COST ~22-30 h each on a LOCAL core; Carya cores ran endgame A at ~1.9x
+# local time, so budget ~45-60 h here (-t 96 h). --resume makes a walltime kill
 # recoverable (resubmit the killed indices: sbatch --array=2 ...).
 # After all tasks: python3 experiments/endgame/gamma30_statics.py --group B --analyze-only
 #
@@ -24,7 +25,7 @@
 #SBATCH -n 1
 #SBATCH -c 2
 #SBATCH --mem=8G
-#SBATCH -t 48:0:0
+#SBATCH -t 96:0:0
 #SBATCH --array=0-2
 #SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=bascomisaiah@gmail.com
