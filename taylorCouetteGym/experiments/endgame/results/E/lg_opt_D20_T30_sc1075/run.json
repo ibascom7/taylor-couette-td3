@@ -1,0 +1,12 @@
+{
+  "tag": "lg_opt_D20_T30_sc1075",
+  "w_lo": 0.0,
+  "w_hi": 2500.0,
+  "duty": 0.2,
+  "period": 30.0,
+  "sc": 1075.0,
+  "mean": 500.0,
+  "note": "their Fig. 6 optimum",
+  "duration": 300.0,
+  "period_used": 30.0
+}

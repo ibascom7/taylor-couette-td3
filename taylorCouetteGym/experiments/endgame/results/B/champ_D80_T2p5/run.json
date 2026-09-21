@@ -1,0 +1,12 @@
+{
+  "tag": "champ_D80_T2p5",
+  "w_lo": 0.0,
+  "w_hi": 375.0,
+  "duty": 0.8,
+  "period": 2.5,
+  "sc": 1075.0,
+  "mean": 300.0,
+  "note": "50 s rapid-shimmy champion",
+  "duration": 300.0,
+  "period_used": 2.5
+}

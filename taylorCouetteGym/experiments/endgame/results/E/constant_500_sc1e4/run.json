@@ -1,0 +1,12 @@
+{
+  "tag": "constant_500_sc1e4",
+  "w_lo": 0.0,
+  "w_hi": 500.0,
+  "duty": 1.0,
+  "period": 10.0,
+  "sc": 10000.0,
+  "mean": 500.0,
+  "note": "constant 500, their Sc",
+  "duration": 300.0,
+  "period_used": 10.0
+}

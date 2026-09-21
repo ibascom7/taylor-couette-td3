@@ -1,0 +1,12 @@
+{
+  "tag": "champ_D90_T5",
+  "w_lo": 0.0,
+  "w_hi": 333.3333333333333,
+  "duty": 0.9,
+  "period": 5.0,
+  "sc": 1075.0,
+  "mean": 300.0,
+  "note": "short-reactor n=1 champion",
+  "duration": 300.0,
+  "period_used": 5.0
+}

@@ -1,0 +1,4 @@
+tag,note,Sc,w_hi_rpm,duty,period_s,mean_cmd_rpm,X_last10,X_lastT,X_tau,conv_final,P_motor_W,P_over_Pmax,R_minus,omega_meas_peak_rpm,omega_meas_mean_rpm,reached_t_s,diverged,wall_hours
+champ_D90_T5,short-reactor n=1 champion,1075,333.3,0.900,5,300.0,0.909147,0.909749,0.908717,0.909611,3.72677,0.11668,0.792467,333.3,299.9,300.0,0,nan
+champ_D80_T2p5,50 s rapid-shimmy champion,1075,375.0,0.800,2.5,300.0,0.895976,0.896059,0.895049,0.898808,3.71768,0.116396,0.77958,375.0,299.9,300.0,0,nan
+shimmy_D63_T5,transfer policy plateau waveform,1075,476.2,0.630,5,300.0,0.864807,0.864317,0.864894,0.867194,3.68277,0.115303,0.749504,476.2,299.9,300.0,0,nan

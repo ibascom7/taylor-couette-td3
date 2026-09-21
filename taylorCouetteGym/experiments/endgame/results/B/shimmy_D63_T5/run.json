@@ -1,0 +1,12 @@
+{
+  "tag": "shimmy_D63_T5",
+  "w_lo": 0.0,
+  "w_hi": 476.1904761904762,
+  "duty": 0.63,
+  "period": 5.0,
+  "sc": 1075.0,
+  "mean": 300.0,
+  "note": "transfer policy plateau waveform",
+  "duration": 300.0,
+  "period_used": 5.0
+}

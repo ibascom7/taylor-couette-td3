@@ -1,0 +1,37 @@
+{
+  "source": "s2_wrap",
+  "clock": "wrap",
+  "mode": "policy",
+  "n_source_blocks": 30,
+  "n_continuation_blocks": 39,
+  "t_end_s": 690.0,
+  "X_source_last_block": 0.881342,
+  "X_source_plateau_blocks17_26": 0.8784706,
+  "X_continuation_last_block": 0.878763,
+  "X_continuation_windows": [
+    {
+      "window": "[300,430]",
+      "tau_index": 1,
+      "X_mean": 0.8838897682628095
+    },
+    {
+      "window": "[430,560]",
+      "tau_index": 2,
+      "X_mean": 0.8827626320204853
+    },
+    {
+      "window": "[560,690]",
+      "tau_index": 3,
+      "X_mean": 0.8815754276639161
+    }
+  ],
+  "P_continuation_mean_W": 3.7912461538461546,
+  "R_minus_last_block": 0.7600639970617985,
+  "refs": {
+    "constant300_X": 0.786883,
+    "pulsed_D80T10_X": 0.87645,
+    "stretch_X_last": 0.901486,
+    "wrap_X_last": 0.881342
+  },
+  "verdict": "TIES the static pulse (within 0.01)"
+}

@@ -1,0 +1,12 @@
+{
+  "tag": "lg_min_D80_T5_sc1e4",
+  "w_lo": 0.0,
+  "w_hi": 625.0,
+  "duty": 0.8,
+  "period": 5.0,
+  "sc": 10000.0,
+  "mean": 500.0,
+  "note": "their local minimum, their Sc",
+  "duration": 300.0,
+  "period_used": 5.0
+}
