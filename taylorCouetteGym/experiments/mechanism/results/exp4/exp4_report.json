@@ -1,0 +1,29 @@
+{
+  "n_stops": 20,
+  "median": {
+    "dip_s": 0.696399999999997,
+    "left": 0.5717191753383205,
+    "tau_fall": 1.2539906250106045,
+    "overshoot": 0.03343496463899043,
+    "t_peak_after_restart": 0.4822999999999986,
+    "tau_fade": 0.13173361124154825,
+    "plateau_over_const": 1.2143881063325828
+  },
+  "decomposition": {
+    "wf_champion": 9.597006951078804e-09,
+    "wf_constant": 8.344910541290771e-09,
+    "plateau": 1.012637517746224e-08,
+    "X_champion_budget": 0.41459070028660433,
+    "X_constant_budget": 0.3605001353837613,
+    "X_champion_outlet": 0.4090500419078122,
+    "X_constant_outlet": 0.35919602449249655,
+    "gain_X": 0.05409056490284301,
+    "from_plateau_X": 0.07695927228260745,
+    "from_overshoot_X": 0.0010910332280496848,
+    "from_dips_X": -0.02224549299975536,
+    "speed_only_expectation": 0.0765326433155129
+  },
+  "swirl_clock_pred_s": 0.3799536787498893,
+  "film_clock_pred_s": 0.8,
+  "note": "maxCo 1.8 traces: outlet X carries the outlet-jet artifact; the wall-flux numbers are interior and unaffected"
+}
