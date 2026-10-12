@@ -1,0 +1,456 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+
+application     pimpleFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         130;
+
+deltaT          0.01;
+
+writeControl    adjustableRunTime;
+
+writeInterval   10;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression no;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable no;
+
+adjustTimeStep  yes;
+
+maxCo           0.9;
+
+maxDeltaT       0.05;
+
+functions
+{
+    mechClocks
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            mechClocks;
+        executeControl  adjustableRunTime;
+        executeInterval 0.02;
+        writeControl    adjustableRunTime;
+        writeInterval   0.02;
+        codeInclude     #{
+            #include "fvCFD.H"
+            #include <fstream>
+            #include <iomanip>
+            #include <vector>
+            #include <algorithm>
+        #};
+        codeOptions     #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+        codeLibs        #{
+            -lfiniteVolume
+        #};
+        codeExecute     #{
+            // Mechanism-experiment diagnostics (experiments/mechanism). All
+            // fluxes are per wedge and divided by c0 [m^3/s]; inventory [m^3].
+            const fvMesh& mesh = refCast<const fvMesh>(obr_);
+            const volScalarField& c = mesh.lookupObject<volScalarField>("c");
+            const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+            const surfaceScalarField& phi = mesh.lookupObject<surfaceScalarField>("phi");
+            const scalar Dmol = 1.000000e-08;
+            const scalar c0 = 50.0;
+
+            // ---- volume averages: swirl, secondary-flow energy, inventory --
+            const scalarField& V = mesh.V();
+            const vectorField& C = mesh.C();
+            scalar sV = 0, sUt = 0, sE = 0, sInv = 0;
+            forAll(C, i)
+            {
+                const scalar x = C[i].x();
+                const scalar y = C[i].y();
+                const scalar r = sqrt(sqr(x) + sqr(y));
+                const vector eT(-y/r, x/r, 0.0);
+                const vector eR(x/r, y/r, 0.0);
+                const scalar ut = U[i] & eT;
+                const scalar ur = U[i] & eR;
+                const scalar uz = U[i].z();
+                sV   += V[i];
+                sUt  += ut*V[i];
+                sE   += (sqr(ur) + sqr(uz))*V[i];
+                sInv += c[i]*V[i];
+            }
+            reduce(sV, sumOp<scalar>());
+            reduce(sUt, sumOp<scalar>());
+            reduce(sE, sumOp<scalar>());
+            reduce(sInv, sumOp<scalar>());
+
+            // ---- catalytic outer wall: resolved diffusive consumption ------
+            scalar wall = 0;
+            {
+                const label pI = mesh.boundaryMesh().findPatchID("outer_wall");
+                const fvPatchScalarField& cw = c.boundaryField()[pI];
+                const scalarField snG(cw.snGrad());
+                const scalarField& A = mesh.boundary()[pI].magSf();
+                forAll(snG, f) { wall -= Dmol*snG[f]*A[f]; }
+            }
+            reduce(wall, sumOp<scalar>());
+
+            // ---- inlet: advective + diffusive reactant inflow ---------------
+            scalar inAdv = 0, inDiff = 0, Q = 0;
+            {
+                const label pI = mesh.boundaryMesh().findPatchID("inlet");
+                const fvPatchScalarField& cp = c.boundaryField()[pI];
+                const fvsPatchScalarField& ph = phi.boundaryField()[pI];
+                const scalarField snG(cp.snGrad());
+                const scalarField& A = mesh.boundary()[pI].magSf();
+                forAll(cp, f)
+                {
+                    inAdv  -= ph[f]*cp[f];
+                    inDiff += Dmol*snG[f]*A[f];
+                    Q      -= ph[f];
+                }
+            }
+            reduce(inAdv, sumOp<scalar>());
+            reduce(inDiff, sumOp<scalar>());
+            reduce(Q, sumOp<scalar>());
+
+            // ---- side outlet: net advective outflow + cup-mixed conversion --
+            scalar outAdv = 0, outPhi = 0, outPhiC = 0;
+            {
+                const label pI = mesh.boundaryMesh().findPatchID("side_outlet");
+                const fvPatchScalarField& cp = c.boundaryField()[pI];
+                const fvsPatchScalarField& ph = phi.boundaryField()[pI];
+                forAll(cp, f)
+                {
+                    outAdv += ph[f]*cp[f];
+                    if (ph[f] > 0) { outPhi += ph[f]; outPhiC += ph[f]*cp[f]; }
+                }
+            }
+            reduce(outAdv, sumOp<scalar>());
+            reduce(outPhi, sumOp<scalar>());
+            reduce(outPhiC, sumOp<scalar>());
+            const scalar xOut = 1.0 - (outPhiC/max(outPhi, VSMALL))/c0;
+
+            // ---- Taylor-cell count: sign changes of u_r along z in the cell
+            // column nearest mid-gap (vortex centres sit where u_r = 0). The
+            // graded blocks share one radial distribution, so that column has
+            // one cell per axial level. Serial runs only (no gather).
+            scalar nVort = 0, urMax = 0;
+            {
+                const scalar rMid = 0.5*(0.0254 + 0.03175);
+                scalar dMin = GREAT;
+                forAll(C, i)
+                {
+                    dMin = min(dMin, mag(sqrt(sqr(C[i].x()) + sqr(C[i].y())) - rMid));
+                }
+                std::vector<std::pair<scalar, scalar>> col;
+                forAll(C, i)
+                {
+                    const scalar r = sqrt(sqr(C[i].x()) + sqr(C[i].y()));
+                    if (mag(r - rMid) < dMin + 1e-7)
+                    {
+                        const vector eR(C[i].x()/r, C[i].y()/r, 0.0);
+                        col.push_back(std::make_pair(C[i].z(), U[i] & eR));
+                        urMax = max(urMax, mag(U[i] & eR));
+                    }
+                }
+                std::sort(col.begin(), col.end());
+                int lastSign = 0;
+                for (size_t k = 0; k < col.size(); ++k)
+                {
+                    const scalar ur = col[k].second;
+                    if (mag(ur) < 0.02*urMax) continue;
+                    const int sg = (ur > 0) ? 1 : -1;
+                    if (lastSign != 0 && sg != lastSign) nVort += 1;
+                    lastSign = sg;
+                }
+            }
+
+            // ---- inner wall angular speed (freeze-bug guard) ----------------
+            scalar sOmA = 0, sA = 0;
+            {
+                const label pI = mesh.boundaryMesh().findPatchID("inner_wall");
+                const fvPatchVectorField& Uw = U.boundaryField()[pI];
+                const vectorField& Cf = mesh.boundary()[pI].Cf();
+                const scalarField& A = mesh.boundary()[pI].magSf();
+                forAll(Cf, f)
+                {
+                    const scalar r = sqrt(sqr(Cf[f].x()) + sqr(Cf[f].y()));
+                    const vector eT(-Cf[f].y()/r, Cf[f].x()/r, 0.0);
+                    sOmA += ((Uw[f] & eT)/r)*A[f];
+                    sA   += A[f];
+                }
+            }
+            reduce(sOmA, sumOp<scalar>());
+            reduce(sA, sumOp<scalar>());
+
+            if (Pstream::master())
+            {
+                fileName outDir = mesh.time().path()/"postProcessing"/"mechClocks"/"0";
+                mkDir(outDir);
+                const bool fresh = (mesh.time().timeIndex() <= 1);
+                std::ofstream os((outDir/"mech.dat").c_str(),
+                                 fresh ? std::ios::out : std::ios::app);
+                if (fresh)
+                {
+                    os << "# t Omega Q inAdv inDiff outAdv xOut wall inv V swirl Esec nVort urMax" << std::endl;
+                }
+                os << std::setprecision(10)
+                   << mesh.time().value() << ' ' << sOmA/max(sA, VSMALL) << ' '
+                   << Q << ' ' << inAdv/c0 << ' ' << inDiff/c0 << ' '
+                   << outAdv/c0 << ' ' << xOut << ' ' << wall/c0 << ' '
+                   << sInv/c0 << ' ' << sV << ' ' << sUt/sV << ' ' << sE/sV << ' '
+                   << nVort << ' ' << urMax << std::endl;
+            }
+        #};
+    }
+    scalarTransport
+    {
+        type            scalarTransport;
+        libs            ( solverFunctionObjects );
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+        field           c;
+        resetOnStartUp  false;
+        schemesField    c;
+        D               1e-08;
+        nCorr           1;
+    }
+    sideOutletConversion
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            sideOutletConversion;
+        executeControl  adjustableRunTime;
+        executeInterval 0.1;
+        writeControl    adjustableRunTime;
+        writeInterval   0.1;
+        codeInclude     #{
+            #include "fvCFD.H"
+            #include <fstream>
+        #};
+        codeOptions     #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+        codeLibs        #{
+            -lfiniteVolume
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = refCast<const fvMesh>(obr_);
+            const volScalarField& c = mesh.lookupObject<volScalarField>("c");
+            const surfaceScalarField& phi = mesh.lookupObject<surfaceScalarField>("phi");
+
+            const word patchName("side_outlet");
+            const label patchI = mesh.boundaryMesh().findPatchID(patchName);
+            if (patchI < 0)
+            {
+                FatalErrorInFunction << "Patch " << patchName << " was not found." << exit(FatalError);
+            }
+
+            const scalar c0 = 50.0;
+            const fvPatchScalarField& cp = c.boundaryField()[patchI];
+            const fvsPatchScalarField& phip = phi.boundaryField()[patchI];
+
+            scalar sumOutPhi = 0.0;
+            scalar sumOutPhiC = 0.0;
+
+            forAll(cp, faceI)
+            {
+                const scalar phif = phip[faceI];
+                if (phif > 0.0)
+                {
+                    sumOutPhi  += phif;
+                    sumOutPhiC += phif*cp[faceI];
+                }
+            }
+
+            reduce(sumOutPhi, sumOp<scalar>());
+            reduce(sumOutPhiC, sumOp<scalar>());
+
+            const scalar cOut = sumOutPhiC/max(sumOutPhi, VSMALL);
+            const scalar conversion = 1.0 - cOut/c0;
+
+            fileName outDir = mesh.time().path()/"postProcessing"/"sideOutletConversion"/"0";
+            mkDir(outDir);
+            fileName outFile = outDir/"outletConversion.dat";
+
+            std::ios_base::openmode mode = std::ios::app;
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                mode = std::ios::out;
+            }
+
+            std::ofstream os(outFile.c_str(), mode);
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                os << "# time cOutlet_mmol_per_m3 conversion sumOutPhi_m3_per_s patch" << std::endl;
+            }
+
+            os  << mesh.time().value() << ' '
+                << cOut << ' '
+                << conversion << ' '
+                << sumOutPhi << ' '
+                << patchName << std::endl;
+
+            Info<< "SIDE_OUTLET_CONVERSION"
+                << " t=" << mesh.time().value()
+                << " cOut=" << cOut
+                << " conversion=" << conversion
+                << " outPhi=" << sumOutPhi
+                << " file=" << outFile
+                << nl;
+        #};
+    }
+    rotationalPower_innerWall
+    {
+        type            coded;
+        libs            ( utilityFunctionObjects );
+        name            rotationalPower_innerWall;
+        executeControl  adjustableRunTime;
+        executeInterval 0.1;
+        writeControl    adjustableRunTime;
+        writeInterval   0.1;
+        codeInclude     #{
+            #include "fvCFD.H"
+            #include <fstream>
+        #};
+        codeOptions     #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+        codeLibs        #{
+            -lfiniteVolume
+        #};
+        codeExecute     #{
+            const fvMesh& mesh = refCast<const fvMesh>(obr_);
+            const volVectorField& U = mesh.lookupObject<volVectorField>("U");
+
+            const label patchI = mesh.boundaryMesh().findPatchID("inner_wall");
+            if (patchI < 0)
+            {
+                FatalErrorInFunction << "Patch inner_wall was not found." << exit(FatalError);
+            }
+
+            IOdictionary transportProperties
+            (
+                IOobject
+                (
+                    "transportProperties",
+                    mesh.time().constant(),
+                    mesh,
+                    IOobject::MUST_READ_IF_MODIFIED,
+                    IOobject::NO_WRITE
+                )
+            );
+
+            const dimensionedScalar nuDim("nu", dimViscosity, transportProperties);
+            const dimensionedScalar rhoDim("rho", dimDensity, transportProperties);
+            const scalar nu = nuDim.value();
+            const scalar rho = rhoDim.value();
+
+            const scalar fullScale = 72.0;
+
+            const fvPatch& p = mesh.boundary()[patchI];
+            const vectorField& Cf = p.Cf();
+            const scalarField& magSf = p.magSf();
+
+            const volTensorField gradU(fvc::grad(U));
+            const fvPatchTensorField& gradUp = gradU.boundaryField()[patchI];
+            const fvPatchVectorField& Uw = U.boundaryField()[patchI];
+
+            scalar MzWedge = 0.0;
+            scalar sumOmegaA = 0.0;
+            scalar sumA = 0.0;
+
+            forAll(Cf, faceI)
+            {
+                const scalar x = Cf[faceI].x();
+                const scalar y = Cf[faceI].y();
+                const scalar r = sqrt(sqr(x) + sqr(y));
+
+                if (r > SMALL)
+                {
+                    const vector eTheta(-y/r, x/r, 0.0);
+                    const scalar Af = magSf[faceI];
+                    const vector nHat = p.Sf()[faceI]/Af;
+
+                    const tensor grad = gradUp[faceI];
+                    const vector traction = rho*nu*((grad + grad.T()) & nHat);
+
+                    MzWedge += ((Cf[faceI] ^ (traction*Af)) & vector(0, 0, 1));
+                    sumOmegaA += ((Uw[faceI] & eTheta)/r)*Af;
+                    sumA += Af;
+                }
+            }
+
+            reduce(MzWedge, sumOp<scalar>());
+            reduce(sumOmegaA, sumOp<scalar>());
+            reduce(sumA, sumOp<scalar>());
+
+            const scalar Omega = sumOmegaA/max(sumA, VSMALL);
+            const scalar P_wedge = mag(MzWedge*Omega);
+            const scalar P_full = fullScale*P_wedge;
+
+            fileName outDir = mesh.time().path()/"postProcessing"/"rotationalPower_innerWall"/"0";
+            mkDir(outDir);
+            fileName outFile = outDir/"rotationalPower.dat";
+
+            std::ios_base::openmode mode = std::ios::app;
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                mode = std::ios::out;
+            }
+
+            std::ofstream os(outFile.c_str(), mode);
+            if (mesh.time().timeIndex() <= 1 || mesh.time().value() <= SMALL)
+            {
+                os << "# time Omega_rad_per_s Mz_wedge_Nm P_wedge_W P_full_360deg_W rho_kg_per_m3 nu_m2_per_s fullScale" << std::endl;
+            }
+
+            os  << mesh.time().value() << ' '
+                << Omega << ' '
+                << MzWedge << ' '
+                << P_wedge << ' '
+                << P_full << ' '
+                << rho << ' '
+                << nu << ' '
+                << fullScale << std::endl;
+
+            Info<< "ROTATIONAL_POWER"
+                << " t=" << mesh.time().value()
+                << " Omega=" << Omega
+                << " Mz_wedge=" << MzWedge
+                << " P_full=" << P_full
+                << " file=" << outFile
+                << nl;
+        #};
+    }
+}
+
+
+// ************************************************************************* //

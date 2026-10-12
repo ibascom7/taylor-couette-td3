@@ -1,0 +1,24 @@
+{
+  "exp": "e1",
+  "nu_tag": "nu1",
+  "nu_f": 1.0,
+  "stop": 0.85,
+  "w_lo": 0.0,
+  "w_hi": 356.6666666666667,
+  "mean": 300.0,
+  "rep": 0,
+  "run_s": 4.5,
+  "period": 5.35,
+  "tag": "e1_nu1_s0p85",
+  "kind": "wave",
+  "cfg": {
+    "episode": 130.0,
+    "warm": 60.0,
+    "run_s": 4.5,
+    "window": 26.0,
+    "write": 10.0,
+    "clock_t0": 30.0,
+    "e3_stop": 0.5,
+    "e5_switch": 60.0
+  }
+}
