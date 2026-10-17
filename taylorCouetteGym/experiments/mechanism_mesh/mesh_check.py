@@ -52,6 +52,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 import matplotlib
+import matplotlib.ticker
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -238,6 +239,9 @@ def plot(results_dir, allr, meshes, switch):
             sel = t >= switch - 10
             ax[1].plot(t[sel] - switch, n[sel], "-", color=MESH_COL[m], lw=1, label=m)
     ax[0].set_xscale("log")
+    ax[0].set_xticks([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1.0, 1.2])
+    ax[0].set_xticklabels(["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1", "1.2"])
+    ax[0].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax[0].set_xlabel("stop length [s]  (run 4.5 s, mean 300 rpm)")
     ax[0].set_ylabel("conversion (wall-flux budget)")
     ax[0].set_title("Numbers = Taylor cells during bursts; dotted = constant 300")
